@@ -9,27 +9,64 @@ function publico({ id, nombre, email, rol, estado }) {
   return { id, nombre, email, rol, estado };
 }
 
-export function crearServicioUsuarios(repositorio) {
+const LONGITUD_MINIMA_PASSWORD = 8;
+
+// cifrador: { cifrar(texto) -> hash, comparar(texto, hash) -> boolean } (bcrypt en producción).
+// notificar(usuario, token): avisa al usuario para que confirme su email.
+export function crearServicioUsuarios(repositorio, { cifrador, notificar = () => {} } = {}) {
   return {
     // Alta local: el usuario queda pendiente de confirmar el email.
-    async alta({ nombre, email } = {}) {
+    async alta({ nombre, email, password } = {}) {
       if (typeof nombre !== "string" || nombre.trim() === "") {
         throw new ErrorLogica("DATOS_INVALIDOS", "El nombre es obligatorio");
       }
       if (typeof email !== "string" || !EMAIL_VALIDO.test(email.trim())) {
         throw new ErrorLogica("DATOS_INVALIDOS", "El email no es válido");
       }
+      if (typeof password !== "string" || password.length < LONGITUD_MINIMA_PASSWORD) {
+        throw new ErrorLogica("DATOS_INVALIDOS", `La contraseña debe tener al menos ${LONGITUD_MINIMA_PASSWORD} caracteres`);
+      }
       const emailNormalizado = email.trim().toLowerCase();
       if (await repositorio.buscarPorEmail(emailNormalizado)) {
         throw new ErrorLogica("EMAIL_DUPLICADO", "Ya existe un usuario con ese email");
       }
+      const tokenConfirmacion = randomUUID();
       const usuario = await repositorio.crear({
         id: randomUUID(),
         nombre: nombre.trim(),
         email: emailNormalizado,
         rol: "user",
         estado: "pendiente",
+        hash: await cifrador.cifrar(password), // nunca se guarda la contraseña en claro
+        tokenConfirmacion,
       });
+      await notificar(publico(usuario), tokenConfirmacion);
+      return publico(usuario);
+    },
+
+    // Confirma el email con el token recibido: la cuenta pasa de pendiente a activa.
+    async confirmar(token) {
+      const usuario = token ? await repositorio.buscarPorToken(token) : null;
+      if (!usuario || usuario.estado === "eliminado") {
+        throw new ErrorLogica("NO_ENCONTRADO", "El enlace de confirmación no es válido");
+      }
+      const { tokenConfirmacion: _usado, ...resto } = usuario;
+      await repositorio.actualizar({ ...resto, estado: "activo" });
+    },
+
+    // Inicio de sesión local. Devuelve el usuario si las credenciales son correctas y la cuenta está activa.
+    async iniciarSesion({ email, password } = {}) {
+      const usuario =
+        typeof email === "string" && typeof password === "string"
+          ? await repositorio.buscarPorEmail(email.trim().toLowerCase())
+          : null;
+      const correcta = usuario?.hash ? await cifrador.comparar(password, usuario.hash) : false;
+      if (!usuario || usuario.estado === "eliminado" || !correcta) {
+        throw new ErrorLogica("CREDENCIALES_INVALIDAS", "Email o contraseña incorrectos");
+      }
+      if (usuario.estado === "pendiente") {
+        throw new ErrorLogica("CUENTA_PENDIENTE", "Confirma tu email antes de iniciar sesión");
+      }
       return publico(usuario);
     },
 
