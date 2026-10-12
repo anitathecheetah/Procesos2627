@@ -42,5 +42,16 @@ export function crearRutasApi({ usuarios }) {
     res.status(200).json(await usuarios.listar(req.get("X-Usuario-Id")));
   }));
 
+  // Consultar si un usuario está activo (solo admin).
+  router.get("/usuarios/:id/activo", manejar(async (req, res) => {
+    res.status(200).json(await usuarios.usuarioActivo(req.get("X-Usuario-Id"), req.params.id));
+  }));
+
+  // Eliminar un usuario (admin o el propio usuario). Eliminación lógica.
+  router.delete("/usuarios/:id", manejar(async (req, res) => {
+    await usuarios.eliminar(req.get("X-Usuario-Id"), req.params.id);
+    res.status(204).end();
+  }));
+
   return router;
 }
