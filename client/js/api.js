@@ -36,3 +36,6 @@ async function peticion(metodo, ruta, cuerpo) {
 
 // --- Servidor ---
 export const salud = () => peticion("GET", "/salud");
+
+export const registrar = (datos) => peticion("POST", "/usuarios", datos);
+export const iniciarSesion = (datos) => peticion("POST", "/sesion", datos);
