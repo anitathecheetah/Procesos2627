@@ -57,3 +57,46 @@ test("GET /api/usuarios: 401 sin identificar, 403 siendo usuario, 200 siendo adm
     assert.equal((await r.json()).length, 2);
   } finally { cerrar(); }
 });
+
+// ---- PBI-05: estado y eliminación ----
+test("GET /api/usuarios/:id/activo: admin 200 {id, activo}, usuario 403, inexistente 404", async () => {
+  const { url, repositorio, cerrar } = await arrancar();
+  try {
+    await repositorio.crear({ id: "adm", nombre: "Admin", email: "admin@x.es", rol: "admin", estado: "activo" });
+    const u = await (await post(url, { nombre: "Ana", email: "ana@correo.es" })).json();
+
+    const r = await fetch(`${url}/api/usuarios/${u.id}/activo`, { headers: { "X-Usuario-Id": "adm" } });
+    assert.equal(r.status, 200);
+    assert.deepEqual(await r.json(), { id: u.id, activo: false });
+
+    assert.equal((await fetch(`${url}/api/usuarios/${u.id}/activo`, { headers: { "X-Usuario-Id": u.id } })).status, 403);
+    const r404 = await fetch(`${url}/api/usuarios/nada/activo`, { headers: { "X-Usuario-Id": "adm" } });
+    assert.equal(r404.status, 404);
+    assert.equal((await r404.json()).codigo, "NO_ENCONTRADO");
+  } finally { cerrar(); }
+});
+
+test("DELETE /api/usuarios/:id: 204 al borrarse a sí mismo, 403 a otro, 401 sin identificar", async () => {
+  const { url, cerrar } = await arrancar();
+  try {
+    const a = await (await post(url, { nombre: "Ana", email: "ana@correo.es" })).json();
+    const b = await (await post(url, { nombre: "Beto", email: "beto@correo.es" })).json();
+
+    assert.equal((await fetch(`${url}/api/usuarios/${b.id}`, { method: "DELETE" })).status, 401);
+    assert.equal((await fetch(`${url}/api/usuarios/${b.id}`, { method: "DELETE", headers: { "X-Usuario-Id": a.id } })).status, 403);
+    assert.equal((await fetch(`${url}/api/usuarios/${a.id}`, { method: "DELETE", headers: { "X-Usuario-Id": a.id } })).status, 204);
+  } finally { cerrar(); }
+});
+
+test("DELETE /api/usuarios/:id como admin: 204 y el usuario deja de estar activo", async () => {
+  const { url, repositorio, cerrar } = await arrancar();
+  try {
+    await repositorio.crear({ id: "adm", nombre: "Admin", email: "admin@x.es", rol: "admin", estado: "activo" });
+    const u = await (await post(url, { nombre: "Ana", email: "ana@correo.es" })).json();
+    await repositorio.actualizar({ ...(await repositorio.buscarPorId(u.id)), estado: "activo" });
+
+    assert.equal((await fetch(`${url}/api/usuarios/${u.id}`, { method: "DELETE", headers: { "X-Usuario-Id": "adm" } })).status, 204);
+    const r = await fetch(`${url}/api/usuarios/${u.id}/activo`, { headers: { "X-Usuario-Id": "adm" } });
+    assert.equal((await r.json()).activo, false);
+  } finally { cerrar(); }
+});

@@ -1,6 +1,6 @@
 // Repositorio de usuarios EN MEMORIA (hito 1).
 // En el hito 3 se sustituye por uno con base de datos real que cumple el mismo contrato:
-//   crear(usuario) -> usuario | buscarPorId(id) -> usuario|null
+//   crear(usuario) -> usuario | actualizar(usuario) -> usuario|null | buscarPorId(id) -> usuario|null
 //   buscarPorEmail(email) -> usuario|null | listar() -> usuario[]
 // No contiene reglas de negocio ni conoce HTTP.
 export function crearRepositorioMemoria() {
@@ -8,6 +8,11 @@ export function crearRepositorioMemoria() {
 
   return {
     async crear(usuario) {
+      usuarios.set(usuario.id, { ...usuario });
+      return { ...usuario };
+    },
+    async actualizar(usuario) {
+      if (!usuarios.has(usuario.id)) return null;
       usuarios.set(usuario.id, { ...usuario });
       return { ...usuario };
     },
