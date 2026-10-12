@@ -14,8 +14,22 @@ const LONGITUD_MINIMA_PASSWORD = 8;
 
 // cifrador: { cifrar(texto) -> hash, comparar(texto, hash) -> boolean } (bcrypt en producción).
 // notificar(usuario, token): avisa al usuario para que confirme su email.
-export function crearServicioUsuarios(repositorio, { cifrador, notificar = () => {} } = {}) {
+// emailAdmin: el email que debe tener rol de administrador (variable ADMIN_EMAIL).
+export function crearServicioUsuarios(repositorio, { cifrador, notificar = () => {}, emailAdmin } = {}) {
+  const emailAdminNormalizado = emailAdmin?.trim().toLowerCase() || null;
+
   return {
+    // Arranque: si ya existe el usuario con ADMIN_EMAIL lo hace administrador. Es idempotente:
+    // ejecutarlo varias veces deja el mismo resultado. Si aún no existe, será administrador
+    // cuando se registre y confirme su email (así no hay cuentas con contraseña por defecto).
+    async asegurarAdministrador() {
+      if (!emailAdminNormalizado) return false;
+      const usuario = await repositorio.buscarPorEmail(emailAdminNormalizado);
+      if (!usuario || usuario.estado === "eliminado") return false;
+      if (usuario.rol !== ROL_ADMIN) await repositorio.actualizar({ ...usuario, rol: ROL_ADMIN });
+      return true;
+    },
+
     // Alta local: el usuario queda pendiente de confirmar el email.
     async alta({ nombre, email, password } = {}) {
       if (typeof nombre !== "string" || nombre.trim() === "") {
@@ -36,7 +50,7 @@ export function crearServicioUsuarios(repositorio, { cifrador, notificar = () =>
         id: randomUUID(),
         nombre: nombre.trim(),
         email: emailNormalizado,
-        rol: ROL_USUARIO,
+        rol: emailNormalizado === emailAdminNormalizado ? ROL_ADMIN : ROL_USUARIO,
         estado: "pendiente",
         hash: await cifrador.cifrar(password), // nunca se guarda la contraseña en claro
         tokenConfirmacion,

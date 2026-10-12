@@ -33,14 +33,17 @@ export function crearApp({
   notificar = avisarPorLog,
   repositorioSesiones = crearRepositorioSesionesMemoria(),
   secreto = obtenerSecreto(),
+  emailAdmin = process.env.ADMIN_EMAIL,
 } = {}) {
   const app = express();
 
   app.use(express.json());
 
   // API
+  const usuarios = crearServicioUsuarios(repositorio, { cifrador, notificar, emailAdmin });
+  app.locals.usuarios = usuarios; // para tareas de arranque (index.js)
   app.use("/api", crearRutasApi({
-    usuarios: crearServicioUsuarios(repositorio, { cifrador, notificar }),
+    usuarios,
     sesiones: crearServicioSesiones(repositorioSesiones),
     secreto,
     produccion: process.env.NODE_ENV === "production",
