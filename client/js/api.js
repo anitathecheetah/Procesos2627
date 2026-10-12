@@ -39,3 +39,5 @@ export const salud = () => peticion("GET", "/salud");
 
 export const registrar = (datos) => peticion("POST", "/usuarios", datos);
 export const iniciarSesion = (datos) => peticion("POST", "/sesion", datos);
+export const sesionActual = () => peticion("GET", "/sesion");
+export const cerrarSesion = () => peticion("DELETE", "/sesion");

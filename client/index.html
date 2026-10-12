@@ -12,7 +12,13 @@
     <p class="subtitulo">Crea tu cuenta o inicia sesión.</p>
     <p id="aviso-global" class="mensaje" role="status"></p>
 
-    <div class="formularios">
+    <section id="zona-sesion" class="tarjeta" hidden>
+      <h2>Sesión iniciada</h2>
+      <p id="usuario-sesion"></p>
+      <button id="boton-salir" type="button">Salir</button>
+    </section>
+
+    <div class="formularios" id="zona-formularios">
       <section class="tarjeta">
         <h2>Registro</h2>
         <form id="form-registro" novalidate>
