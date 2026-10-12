@@ -3,16 +3,19 @@ import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { crearRutasApi } from "./api/rutas.js";
+import { crearRepositorioMemoria } from "./data/repositorioMemoria.js";
+import { crearServicioUsuarios } from "./logic/usuarios.js";
 
 const dirCliente = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "client");
 
-export function crearApp() {
+// Por defecto se monta con el repositorio en memoria; las pruebas pueden inyectar el suyo.
+export function crearApp({ repositorio = crearRepositorioMemoria() } = {}) {
   const app = express();
 
   app.use(express.json());
 
   // API
-  app.use("/api", crearRutasApi());
+  app.use("/api", crearRutasApi({ usuarios: crearServicioUsuarios(repositorio) }));
   app.use("/api", (_req, res) => {
     res.status(404).json({ error: "Ruta no encontrada", codigo: "NO_ENCONTRADO" });
   });
