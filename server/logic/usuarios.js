@@ -70,6 +70,11 @@ export function crearServicioUsuarios(repositorio, { cifrador, notificar = () =>
       return publico(usuario);
     },
 
+    // Datos del usuario identificado (para "quién soy" en la sesión).
+    async obtener(solicitanteId) {
+      return publico(await identificar(repositorio, solicitanteId));
+    },
+
     // Listado: solo administradores.
     async listar(solicitanteId) {
       await exigirAdmin(repositorio, solicitanteId);

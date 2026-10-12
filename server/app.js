@@ -1,11 +1,14 @@
 // Ensambla la aplicación Express: API REST + frontend servido desde el mismo origen.
 import express from "express";
+import { randomBytes } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { crearRutasApi } from "./api/rutas.js";
 import { crearRepositorioMemoria } from "./data/repositorioMemoria.js";
 import { crearServicioUsuarios } from "./logic/usuarios.js";
 import { crearCifradorBcrypt } from "./logic/cifrador.js";
+import { crearServicioSesiones } from "./logic/sesiones.js";
+import { crearRepositorioSesionesMemoria } from "./data/repositorioSesionesMemoria.js";
 
 const dirCliente = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "client");
 
@@ -14,17 +17,34 @@ const dirCliente = path.join(path.dirname(fileURLToPath(import.meta.url)), "..",
 const avisarPorLog = (usuario, token) =>
   console.log(`Confirmación de ${usuario.email}: /api/confirmar?token=${token}`);
 
+// El secreto de las cookies sale de SECRETO_SESION. En producción es obligatorio.
+function obtenerSecreto() {
+  if (process.env.SECRETO_SESION) return process.env.SECRETO_SESION;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Falta la variable de entorno SECRETO_SESION");
+  }
+  console.warn("SECRETO_SESION no definido: se usa uno aleatorio (las sesiones se pierden al reiniciar)");
+  return randomBytes(32).toString("hex");
+}
+
 export function crearApp({
   repositorio = crearRepositorioMemoria(),
   cifrador = crearCifradorBcrypt(),
   notificar = avisarPorLog,
+  repositorioSesiones = crearRepositorioSesionesMemoria(),
+  secreto = obtenerSecreto(),
 } = {}) {
   const app = express();
 
   app.use(express.json());
 
   // API
-  app.use("/api", crearRutasApi({ usuarios: crearServicioUsuarios(repositorio, { cifrador, notificar }) }));
+  app.use("/api", crearRutasApi({
+    usuarios: crearServicioUsuarios(repositorio, { cifrador, notificar }),
+    sesiones: crearServicioSesiones(repositorioSesiones),
+    secreto,
+    produccion: process.env.NODE_ENV === "production",
+  }));
   app.use("/api", (_req, res) => {
     res.status(404).json({ error: "Ruta no encontrada", codigo: "NO_ENCONTRADO" });
   });
