@@ -3,11 +3,27 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { crearApp } from "../../server/app.js";
 import { crearRepositorioMemoria } from "../../server/data/repositorioMemoria.js";
+import { crearCifradorBcrypt } from "../../server/logic/cifrador.js";
+
+// Crea directamente en el repositorio un usuario ya confirmado (contraseña "secreta123").
+async function crearActivo(repositorio, { id, email, rol = "user" }) {
+  const hash = await crearCifradorBcrypt().cifrar("secreta123");
+  await repositorio.crear({ id, nombre: id, email, rol, estado: "activo", hash });
+}
+
+// Inicia sesión y devuelve la cookie para usarla en la cabecera Cookie.
+async function entrar(url, email, password = "secreta123") {
+  const r = await fetch(`${url}/api/sesion`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }),
+  });
+  assert.equal(r.status, 200);
+  return r.headers.getSetCookie()[0].split(";")[0];
+}
 
 async function arrancar(repositorio = crearRepositorioMemoria()) {
   const tokens = [];
   const servidor = await new Promise((r) => {
-    const s = crearApp({ repositorio, notificar: (_u, token) => tokens.push(token) }).listen(0, () => r(s));
+    const s = crearApp({ repositorio, secreto: "secreto-de-prueba", notificar: (_u, token) => tokens.push(token) }).listen(0, () => r(s));
   });
   const url = `http://127.0.0.1:${servidor.address().port}`;
   return { url, repositorio, tokens, cerrar: () => { servidor.close(); servidor.closeAllConnections(); } };
@@ -44,16 +60,16 @@ test("POST /api/usuarios con datos inválidos responde 400", async () => {
   } finally { cerrar(); }
 });
 
-test("GET /api/usuarios: 401 sin identificar, 403 siendo usuario, 200 siendo admin", async () => {
+test("GET /api/usuarios: 401 sin sesión, 403 siendo usuario, 200 siendo admin", async () => {
   const { url, repositorio, cerrar } = await arrancar();
   try {
-    await repositorio.crear({ id: "adm", nombre: "Admin", email: "admin@x.es", rol: "admin", estado: "activo" });
-    const normal = await (await post(url, { nombre: "Ana", email: "ana@correo.es", password: "secreta123" })).json();
+    await crearActivo(repositorio, { id: "adm", email: "admin@x.es", rol: "admin" });
+    await crearActivo(repositorio, { id: "u1", email: "ana@correo.es" });
 
     assert.equal((await fetch(`${url}/api/usuarios`)).status, 401);
-    assert.equal((await fetch(`${url}/api/usuarios`, { headers: { "X-Usuario-Id": normal.id } })).status, 403);
+    assert.equal((await fetch(`${url}/api/usuarios`, { headers: { Cookie: await entrar(url, "ana@correo.es") } })).status, 403);
 
-    const r = await fetch(`${url}/api/usuarios`, { headers: { "X-Usuario-Id": "adm" } });
+    const r = await fetch(`${url}/api/usuarios`, { headers: { Cookie: await entrar(url, "admin@x.es") } });
     assert.equal(r.status, 200);
     assert.equal((await r.json()).length, 2);
   } finally { cerrar(); }
@@ -63,42 +79,43 @@ test("GET /api/usuarios: 401 sin identificar, 403 siendo usuario, 200 siendo adm
 test("GET /api/usuarios/:id/activo: admin 200 {id, activo}, usuario 403, inexistente 404", async () => {
   const { url, repositorio, cerrar } = await arrancar();
   try {
-    await repositorio.crear({ id: "adm", nombre: "Admin", email: "admin@x.es", rol: "admin", estado: "activo" });
-    const u = await (await post(url, { nombre: "Ana", email: "ana@correo.es", password: "secreta123" })).json();
+    await crearActivo(repositorio, { id: "adm", email: "admin@x.es", rol: "admin" });
+    await crearActivo(repositorio, { id: "u1", email: "ana@correo.es" });
+    const admin = { headers: { Cookie: await entrar(url, "admin@x.es") } };
 
-    const r = await fetch(`${url}/api/usuarios/${u.id}/activo`, { headers: { "X-Usuario-Id": "adm" } });
+    const r = await fetch(`${url}/api/usuarios/u1/activo`, admin);
     assert.equal(r.status, 200);
-    assert.deepEqual(await r.json(), { id: u.id, activo: false });
+    assert.deepEqual(await r.json(), { id: "u1", activo: true });
 
-    assert.equal((await fetch(`${url}/api/usuarios/${u.id}/activo`, { headers: { "X-Usuario-Id": u.id } })).status, 403);
-    const r404 = await fetch(`${url}/api/usuarios/nada/activo`, { headers: { "X-Usuario-Id": "adm" } });
+    assert.equal((await fetch(`${url}/api/usuarios/u1/activo`, { headers: { Cookie: await entrar(url, "ana@correo.es") } })).status, 403);
+    const r404 = await fetch(`${url}/api/usuarios/nada/activo`, admin);
     assert.equal(r404.status, 404);
     assert.equal((await r404.json()).codigo, "NO_ENCONTRADO");
   } finally { cerrar(); }
 });
 
-test("DELETE /api/usuarios/:id: 204 al borrarse a sí mismo, 403 a otro, 401 sin identificar", async () => {
-  const { url, cerrar } = await arrancar();
+test("DELETE /api/usuarios/:id: 204 al borrarse a sí mismo, 403 a otro, 401 sin sesión", async () => {
+  const { url, repositorio, cerrar } = await arrancar();
   try {
-    const a = await (await post(url, { nombre: "Ana", email: "ana@correo.es", password: "secreta123" })).json();
-    const b = await (await post(url, { nombre: "Beto", email: "beto@correo.es", password: "secreta123" })).json();
+    await crearActivo(repositorio, { id: "a", email: "ana@correo.es" });
+    await crearActivo(repositorio, { id: "b", email: "beto@correo.es" });
+    const cookieAna = await entrar(url, "ana@correo.es");
 
-    assert.equal((await fetch(`${url}/api/usuarios/${b.id}`, { method: "DELETE" })).status, 401);
-    assert.equal((await fetch(`${url}/api/usuarios/${b.id}`, { method: "DELETE", headers: { "X-Usuario-Id": a.id } })).status, 403);
-    assert.equal((await fetch(`${url}/api/usuarios/${a.id}`, { method: "DELETE", headers: { "X-Usuario-Id": a.id } })).status, 204);
+    assert.equal((await fetch(`${url}/api/usuarios/b`, { method: "DELETE" })).status, 401);
+    assert.equal((await fetch(`${url}/api/usuarios/b`, { method: "DELETE", headers: { Cookie: cookieAna } })).status, 403);
+    assert.equal((await fetch(`${url}/api/usuarios/a`, { method: "DELETE", headers: { Cookie: cookieAna } })).status, 204);
   } finally { cerrar(); }
 });
 
 test("DELETE /api/usuarios/:id como admin: 204 y el usuario deja de estar activo", async () => {
   const { url, repositorio, cerrar } = await arrancar();
   try {
-    await repositorio.crear({ id: "adm", nombre: "Admin", email: "admin@x.es", rol: "admin", estado: "activo" });
-    const u = await (await post(url, { nombre: "Ana", email: "ana@correo.es", password: "secreta123" })).json();
-    await repositorio.actualizar({ ...(await repositorio.buscarPorId(u.id)), estado: "activo" });
+    await crearActivo(repositorio, { id: "adm", email: "admin@x.es", rol: "admin" });
+    await crearActivo(repositorio, { id: "u1", email: "ana@correo.es" });
+    const admin = { headers: { Cookie: await entrar(url, "admin@x.es") } };
 
-    assert.equal((await fetch(`${url}/api/usuarios/${u.id}`, { method: "DELETE", headers: { "X-Usuario-Id": "adm" } })).status, 204);
-    const r = await fetch(`${url}/api/usuarios/${u.id}/activo`, { headers: { "X-Usuario-Id": "adm" } });
-    assert.equal((await r.json()).activo, false);
+    assert.equal((await fetch(`${url}/api/usuarios/u1`, { method: "DELETE", ...admin })).status, 204);
+    assert.equal((await (await fetch(`${url}/api/usuarios/u1/activo`, admin)).json()).activo, false);
   } finally { cerrar(); }
 });
 
