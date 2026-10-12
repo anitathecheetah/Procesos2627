@@ -1,6 +1,7 @@
 // Capa lógica: reglas de gestión de usuarios. No conoce Express ni la base de datos.
 import { randomUUID } from "node:crypto";
 import { ErrorLogica } from "./errores.js";
+import { ROL_ADMIN, ROL_USUARIO } from "./roles.js";
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -35,7 +36,7 @@ export function crearServicioUsuarios(repositorio, { cifrador, notificar = () =>
         id: randomUUID(),
         nombre: nombre.trim(),
         email: emailNormalizado,
-        rol: "user",
+        rol: ROL_USUARIO,
         estado: "pendiente",
         hash: await cifrador.cifrar(password), // nunca se guarda la contraseña en claro
         tokenConfirmacion,
@@ -92,7 +93,7 @@ export function crearServicioUsuarios(repositorio, { cifrador, notificar = () =>
     // Eliminación lógica: la puede hacer un administrador o el propio usuario.
     async eliminar(solicitanteId, id) {
       const solicitante = await identificar(repositorio, solicitanteId);
-      if (solicitante.rol !== "admin" && solicitante.id !== id) {
+      if (solicitante.rol !== ROL_ADMIN && solicitante.id !== id) {
         throw new ErrorLogica("PROHIBIDO", "Solo puedes eliminar tu propio usuario");
       }
       const usuario = await repositorio.buscarPorId(id);
@@ -113,5 +114,5 @@ async function identificar(repositorio, solicitanteId) {
 
 async function exigirAdmin(repositorio, solicitanteId) {
   const solicitante = await identificar(repositorio, solicitanteId);
-  if (solicitante.rol !== "admin") throw new ErrorLogica("PROHIBIDO", "Solo un administrador puede hacer esto");
+  if (solicitante.rol !== ROL_ADMIN) throw new ErrorLogica("PROHIBIDO", "Solo un administrador puede hacer esto");
 }
