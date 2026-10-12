@@ -3,6 +3,7 @@
   :root { --fondo: #12161c; --tarjeta: #1b212a; --texto: #e8ecf2; --suave: #9aa6b6; --marca: #7b9bff; --error: #ff8a80; --ok: #7ddc9a; --borde: #2c3542; }
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; } /* si no, display:grid/flex anula el atributo hidden */
 body { margin: 0; font-family: system-ui, sans-serif; background: var(--fondo); color: var(--texto); }
 main { max-width: 52rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
 h1 { margin: 0 0 .25rem; font-size: 1.6rem; }

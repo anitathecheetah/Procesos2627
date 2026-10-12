@@ -75,6 +75,7 @@ alEnviar(document.getElementById("form-login"), async (datos, formulario) => {
     const usuario = await iniciarSesion(datos);
     formulario.reset();
     mostrarMensaje("", true, formulario);
+    mostrarMensaje("", true); // limpia avisos antiguos (p. ej. "Email confirmado")
     await mostrarSesionCompleta(usuario);
   } catch (error) {
     mostrarMensaje(textoDeError(error), false, formulario);
