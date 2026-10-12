@@ -1,7 +1,7 @@
 // Repositorio de usuarios EN MEMORIA (hito 1).
 // En el hito 3 se sustituye por uno con base de datos real que cumple el mismo contrato:
 //   crear(usuario) -> usuario | actualizar(usuario) -> usuario|null | buscarPorId(id) -> usuario|null
-//   buscarPorEmail(email) -> usuario|null | listar() -> usuario[]
+//   buscarPorEmail(email) -> usuario|null | buscarPorToken(token) -> usuario|null | listar() -> usuario[]
 // No contiene reglas de negocio ni conoce HTTP.
 export function crearRepositorioMemoria() {
   const usuarios = new Map();
@@ -22,6 +22,10 @@ export function crearRepositorioMemoria() {
     },
     async buscarPorEmail(email) {
       for (const u of usuarios.values()) if (u.email === email) return { ...u };
+      return null;
+    },
+    async buscarPorToken(token) {
+      for (const u of usuarios.values()) if (u.tokenConfirmacion && u.tokenConfirmacion === token) return { ...u };
       return null;
     },
     async listar() {
