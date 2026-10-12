@@ -35,4 +35,4 @@ docker build -t procesos2627 .
 docker run --rm -p 8080:8080 -e PORT=8080 procesos2627
 ```
 
-URL desplegada: _(completar tras el primer despliegue)_
+URL desplegada: https://procesos2627-960872498786.europe-west1.run.app
