@@ -1,1 +1,15 @@
 .vs/
+.vscode/
+
+# Dependencias
+node_modules/
+
+# Secretos y configuración local: nunca se suben al repositorio
+.env
+.env.*
+!.env.example
+
+# Logs y temporales
+*.log
+npm-debug.log*
+coverage/
