@@ -46,7 +46,7 @@ La aplicación queda en http://localhost:3000 y la comprobación de salud en htt
 npm test
 ```
 
-Ejecuta con `node:test` todas las pruebas de `test/`. Hoy son pruebas de la API con peticiones HTTP reales (`test/api`). Se ejecutan automáticamente en GitHub Actions (workflow **CI**) en cada pull request y en cada cambio en `main`; no se integra un PR con el CI en rojo.
+Ejecuta con `node:test` todas las pruebas de `test/`. Las pruebas con MongoDB real (`test/data/repositorioMongo.test.js`) solo se ejecutan si defines `MONGODB_URI_PRUEBA` (en el CI hay un MongoDB de servicio); sin ella se omiten. Hoy son pruebas de la API con peticiones HTTP reales (`test/api`). Se ejecutan automáticamente en GitHub Actions (workflow **CI**) en cada pull request y en cada cambio en `main`; no se integra un PR con el CI en rojo.
 
 ## Variables de entorno
 
@@ -56,6 +56,8 @@ Ver `.env.example` (solo nombres, sin valores reales). Copia el archivo a `.env`
 |---|---|
 | `PORT` | Puerto HTTP (Cloud Run lo fija automáticamente). |
 | `NODE_ENV` | `development`, `production` o `test`. |
+| `MONGODB_URI` | Cadena de conexión de MongoDB Atlas (es un secreto). Obligatoria en producción; en desarrollo, si falta, los datos se guardan en memoria y se pierden al reiniciar. |
+| `MONGODB_DB` | Nombre de la base de datos (opcional; por defecto `procesos`). |
 | `SECRETO_SESION` | Secreto con el que se firman las cookies de sesión. Obligatorio en producción; en desarrollo, si falta, se genera uno aleatorio (las sesiones se pierden al reiniciar). |
 
 ## Flujo de trabajo (GitHub Flow)
