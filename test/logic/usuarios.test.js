@@ -62,3 +62,59 @@ test("ERROR: listar sin identificarse o con id desconocido da NO_AUTENTICADO", a
   await assert.rejects(servicio.listar(undefined), rechazaCon("NO_AUTENTICADO"));
   await assert.rejects(servicio.listar("fantasma"), rechazaCon("NO_AUTENTICADO"));
 });
+
+// ---- PBI-05: estado y eliminación ----
+async function conAdmin() {
+  const { repo, servicio } = preparar();
+  await repo.crear({ id: "adm", nombre: "Admin", email: "admin@x.es", rol: "admin", estado: "activo" });
+  return { repo, servicio };
+}
+
+test("un usuario pendiente no está activo y uno confirmado sí", async () => {
+  const { repo, servicio } = await conAdmin();
+  const u = await servicio.alta({ nombre: "Ana", email: "ana@correo.es" });
+  assert.deepEqual(await servicio.usuarioActivo("adm", u.id), { id: u.id, activo: false });
+  await repo.actualizar({ ...(await repo.buscarPorId(u.id)), estado: "activo" });
+  assert.equal((await servicio.usuarioActivo("adm", u.id)).activo, true);
+});
+
+test("un usuario eliminado deja de estar activo", async () => {
+  const { repo, servicio } = await conAdmin();
+  const u = await servicio.alta({ nombre: "Ana", email: "ana@correo.es" });
+  await repo.actualizar({ ...(await repo.buscarPorId(u.id)), estado: "activo" });
+  await servicio.eliminar("adm", u.id);
+  assert.equal((await servicio.usuarioActivo("adm", u.id)).activo, false);
+});
+
+test("la eliminación es lógica: el usuario sigue en el repositorio con estado eliminado", async () => {
+  const { repo, servicio } = await conAdmin();
+  const u = await servicio.alta({ nombre: "Ana", email: "ana@correo.es" });
+  await servicio.eliminar(u.id, u.id);
+  assert.equal((await repo.buscarPorId(u.id)).estado, "eliminado");
+});
+
+test("ERROR: un usuario normal no puede eliminar a otro (PROHIBIDO)", async () => {
+  const { servicio } = await conAdmin();
+  const a = await servicio.alta({ nombre: "Ana", email: "ana@correo.es" });
+  const b = await servicio.alta({ nombre: "Beto", email: "beto@correo.es" });
+  await assert.rejects(servicio.eliminar(a.id, b.id), rechazaCon("PROHIBIDO"));
+});
+
+test("ERROR: eliminar o consultar un id inexistente da NO_ENCONTRADO", async () => {
+  const { servicio } = await conAdmin();
+  await assert.rejects(servicio.eliminar("adm", "fantasma"), rechazaCon("NO_ENCONTRADO"));
+  await assert.rejects(servicio.usuarioActivo("adm", "fantasma"), rechazaCon("NO_ENCONTRADO"));
+});
+
+test("ERROR: un usuario normal no puede consultar el estado de otro (PROHIBIDO)", async () => {
+  const { servicio } = await conAdmin();
+  const a = await servicio.alta({ nombre: "Ana", email: "ana@correo.es" });
+  await assert.rejects(servicio.usuarioActivo(a.id, a.id), rechazaCon("PROHIBIDO"));
+});
+
+test("ERROR: un usuario eliminado ya no puede identificarse (NO_AUTENTICADO)", async () => {
+  const { servicio } = await conAdmin();
+  const a = await servicio.alta({ nombre: "Ana", email: "ana@correo.es" });
+  await servicio.eliminar(a.id, a.id);
+  await assert.rejects(servicio.eliminar(a.id, a.id), rechazaCon("NO_AUTENTICADO"));
+});
