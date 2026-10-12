@@ -4,7 +4,8 @@
   "description": "Arquitectura base de una aplicación SaaS en capas (Sprint 1)",
   "main": "server/index.js",
   "scripts": {
-    "start": "node --env-file-if-exists=.env server/index.js"
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "test": "node --test \"test/**/*.test.js\""
   },
   "repository": {
     "type": "git",
