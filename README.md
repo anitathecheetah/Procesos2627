@@ -57,6 +57,7 @@ Ver `.env.example` (solo nombres, sin valores reales). Copia el archivo a `.env`
 | `PORT` | Puerto HTTP (Cloud Run lo fija automáticamente). |
 | `NODE_ENV` | `development`, `production` o `test`. |
 | `ADMIN_EMAIL` | Email del administrador inicial. Quien se registre y confirme con ese email tiene rol `admin`; si ya existía, se promociona al arrancar (idempotente). |
+| `LOG_LEVEL` | Nivel de log: `debug`, `info` (por defecto), `warn`, `error` o `silencio`. Se registran altas, confirmaciones, inicios de sesión (también los fallidos) y eliminaciones; nunca contraseñas. |
 | `SECRETO_SESION` | Secreto con el que se firman las cookies de sesión. Obligatorio en producción; en desarrollo, si falta, se genera uno aleatorio (las sesiones se pierden al reiniciar). |
 
 ## Flujo de trabajo (GitHub Flow)

@@ -7,6 +7,7 @@ import { crearRutasApi } from "./api/rutas.js";
 import { crearRepositorioMemoria } from "./data/repositorioMemoria.js";
 import { crearServicioUsuarios } from "./logic/usuarios.js";
 import { crearCifradorBcrypt } from "./logic/cifrador.js";
+import { crearLogger } from "./logger.js";
 import { crearServicioSesiones } from "./logic/sesiones.js";
 import { crearRepositorioSesionesMemoria } from "./data/repositorioSesionesMemoria.js";
 
@@ -14,8 +15,9 @@ const dirCliente = path.join(path.dirname(fileURLToPath(import.meta.url)), "..",
 
 // Por defecto se monta con el repositorio en memoria; las pruebas pueden inyectar el suyo.
 // Sin servicio de correo todavía: el enlace de confirmación se escribe en el log del servidor.
+const logPorDefecto = crearLogger();
 const avisarPorLog = (usuario, token) =>
-  console.log(`Confirmación de ${usuario.email}: /api/confirmar?token=${token}`);
+  logPorDefecto.info(`Confirmación de ${usuario.email}: /api/confirmar?token=${token}`);
 
 // El secreto de las cookies sale de SECRETO_SESION. En producción es obligatorio.
 function obtenerSecreto() {
@@ -23,7 +25,7 @@ function obtenerSecreto() {
   if (process.env.NODE_ENV === "production") {
     throw new Error("Falta la variable de entorno SECRETO_SESION");
   }
-  console.warn("SECRETO_SESION no definido: se usa uno aleatorio (las sesiones se pierden al reiniciar)");
+  logPorDefecto.warn("SECRETO_SESION no definido: se usa uno aleatorio (las sesiones se pierden al reiniciar)");
   return randomBytes(32).toString("hex");
 }
 
@@ -34,13 +36,14 @@ export function crearApp({
   repositorioSesiones = crearRepositorioSesionesMemoria(),
   secreto = obtenerSecreto(),
   emailAdmin = process.env.ADMIN_EMAIL,
+  log = logPorDefecto,
 } = {}) {
   const app = express();
 
   app.use(express.json());
 
   // API
-  const usuarios = crearServicioUsuarios(repositorio, { cifrador, notificar, emailAdmin });
+  const usuarios = crearServicioUsuarios(repositorio, { cifrador, notificar, emailAdmin, log });
   app.locals.usuarios = usuarios; // para tareas de arranque (index.js)
   app.use("/api", crearRutasApi({
     usuarios,
@@ -57,7 +60,7 @@ export function crearApp({
 
   // Errores no controlados: siempre JSON {error, codigo}
   app.use((err, _req, res, _next) => {
-    console.error(err);
+    log.error("Error no controlado", { mensaje: err.message });
     res.status(500).json({ error: "Error interno del servidor", codigo: "ERROR_INTERNO" });
   });
 
