@@ -1,6 +1,8 @@
 // Capa lógica: reglas de gestión de usuarios. No conoce Express ni la base de datos.
 import { randomUUID } from "node:crypto";
 import { ErrorLogica } from "./errores.js";
+import { ROL_ADMIN, ROL_USUARIO } from "./roles.js";
+import { loggerSilencioso } from "../logger.js";
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -13,8 +15,25 @@ const LONGITUD_MINIMA_PASSWORD = 8;
 
 // cifrador: { cifrar(texto) -> hash, comparar(texto, hash) -> boolean } (bcrypt en producción).
 // notificar(usuario, token): avisa al usuario para que confirme su email.
-export function crearServicioUsuarios(repositorio, { cifrador, notificar = () => {} } = {}) {
+// emailAdmin: el email que debe tener rol de administrador (variable ADMIN_EMAIL).
+export function crearServicioUsuarios(repositorio, { cifrador, notificar = () => {}, emailAdmin, log = loggerSilencioso } = {}) {
+  const emailAdminNormalizado = emailAdmin?.trim().toLowerCase() || null;
+
   return {
+    // Arranque: si ya existe el usuario con ADMIN_EMAIL lo hace administrador. Es idempotente:
+    // ejecutarlo varias veces deja el mismo resultado. Si aún no existe, será administrador
+    // cuando se registre y confirme su email (así no hay cuentas con contraseña por defecto).
+    async asegurarAdministrador() {
+      if (!emailAdminNormalizado) return false;
+      const usuario = await repositorio.buscarPorEmail(emailAdminNormalizado);
+      if (!usuario || usuario.estado === "eliminado") return false;
+      if (usuario.rol !== ROL_ADMIN) {
+        await repositorio.actualizar({ ...usuario, rol: ROL_ADMIN });
+        log.info("Usuario promocionado a administrador", { id: usuario.id });
+      }
+      return true;
+    },
+
     // Alta local: el usuario queda pendiente de confirmar el email.
     async alta({ nombre, email, password } = {}) {
       if (typeof nombre !== "string" || nombre.trim() === "") {
@@ -35,12 +54,13 @@ export function crearServicioUsuarios(repositorio, { cifrador, notificar = () =>
         id: randomUUID(),
         nombre: nombre.trim(),
         email: emailNormalizado,
-        rol: "user",
+        rol: emailNormalizado === emailAdminNormalizado ? ROL_ADMIN : ROL_USUARIO,
         estado: "pendiente",
         hash: await cifrador.cifrar(password), // nunca se guarda la contraseña en claro
         tokenConfirmacion,
       });
       await notificar(publico(usuario), tokenConfirmacion);
+      log.info("Usuario registrado", { id: usuario.id, email: usuario.email, rol: usuario.rol });
       return publico(usuario);
     },
 
@@ -52,6 +72,7 @@ export function crearServicioUsuarios(repositorio, { cifrador, notificar = () =>
       }
       const { tokenConfirmacion: _usado, ...resto } = usuario;
       await repositorio.actualizar({ ...resto, estado: "activo" });
+      log.info("Email confirmado", { id: usuario.id });
     },
 
     // Inicio de sesión local. Devuelve el usuario si las credenciales son correctas y la cuenta está activa.
@@ -62,11 +83,13 @@ export function crearServicioUsuarios(repositorio, { cifrador, notificar = () =>
           : null;
       const correcta = usuario?.hash ? await cifrador.comparar(password, usuario.hash) : false;
       if (!usuario || usuario.estado === "eliminado" || !correcta) {
+        log.warn("Inicio de sesión fallido", { email: typeof email === "string" ? email : null });
         throw new ErrorLogica("CREDENCIALES_INVALIDAS", "Email o contraseña incorrectos");
       }
       if (usuario.estado === "pendiente") {
         throw new ErrorLogica("CUENTA_PENDIENTE", "Confirma tu email antes de iniciar sesión");
       }
+      log.info("Inicio de sesión", { id: usuario.id });
       return publico(usuario);
     },
 
@@ -92,12 +115,13 @@ export function crearServicioUsuarios(repositorio, { cifrador, notificar = () =>
     // Eliminación lógica: la puede hacer un administrador o el propio usuario.
     async eliminar(solicitanteId, id) {
       const solicitante = await identificar(repositorio, solicitanteId);
-      if (solicitante.rol !== "admin" && solicitante.id !== id) {
+      if (solicitante.rol !== ROL_ADMIN && solicitante.id !== id) {
         throw new ErrorLogica("PROHIBIDO", "Solo puedes eliminar tu propio usuario");
       }
       const usuario = await repositorio.buscarPorId(id);
       if (!usuario) throw new ErrorLogica("NO_ENCONTRADO", "El usuario no existe");
       await repositorio.actualizar({ ...usuario, estado: "eliminado" });
+      log.info("Usuario eliminado", { id, por: solicitante.id });
     },
   };
 }
@@ -113,5 +137,5 @@ async function identificar(repositorio, solicitanteId) {
 
 async function exigirAdmin(repositorio, solicitanteId) {
   const solicitante = await identificar(repositorio, solicitanteId);
-  if (solicitante.rol !== "admin") throw new ErrorLogica("PROHIBIDO", "Solo un administrador puede hacer esto");
+  if (solicitante.rol !== ROL_ADMIN) throw new ErrorLogica("PROHIBIDO", "Solo un administrador puede hacer esto");
 }

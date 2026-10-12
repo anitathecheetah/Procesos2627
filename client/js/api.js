@@ -41,3 +41,5 @@ export const registrar = (datos) => peticion("POST", "/usuarios", datos);
 export const iniciarSesion = (datos) => peticion("POST", "/sesion", datos);
 export const sesionActual = () => peticion("GET", "/sesion");
 export const cerrarSesion = () => peticion("DELETE", "/sesion");
+export const listarUsuarios = () => peticion("GET", "/usuarios");
+export const eliminarUsuario = (id) => peticion("DELETE", `/usuarios/${id}`);

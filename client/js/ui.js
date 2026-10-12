@@ -45,3 +45,45 @@ export function mostrarSesion(usuario) {
 export function alPulsarSalir(manejador) {
   document.getElementById("boton-salir").addEventListener("click", manejador);
 }
+
+export function alPulsarEliminarCuenta(manejador) {
+  document.getElementById("boton-eliminar-cuenta").addEventListener("click", manejador);
+}
+
+export function confirmar(texto) {
+  return window.confirm(texto);
+}
+
+// Panel de administración: tabla de usuarios con botón de eliminar. Con null se oculta.
+export function mostrarAdministracion(usuarios, alEliminar) {
+  const zona = document.getElementById("zona-admin");
+  zona.hidden = !usuarios;
+  if (!usuarios) return;
+  const cuerpo = document.querySelector("#tabla-usuarios tbody");
+  cuerpo.replaceChildren(
+    ...usuarios.map((u) => {
+      const fila = document.createElement("tr");
+      for (const valor of [u.nombre, u.email, u.rol, u.estado]) {
+        const celda = document.createElement("td");
+        celda.textContent = valor; // textContent: nunca se interpreta como HTML
+        fila.append(celda);
+      }
+      const celdaBoton = document.createElement("td");
+      if (u.estado !== "eliminado") {
+        const boton = document.createElement("button");
+        boton.type = "button";
+        boton.textContent = "Eliminar";
+        boton.addEventListener("click", () => alEliminar(u));
+        celdaBoton.append(boton);
+      }
+      fila.append(celdaBoton);
+      return fila;
+    })
+  );
+}
+
+export function mostrarAvisoAdmin(texto, correcto) {
+  const zona = document.getElementById("aviso-admin");
+  zona.textContent = texto;
+  zona.dataset.correcto = String(correcto);
+}

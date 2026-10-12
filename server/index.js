@@ -19,7 +19,10 @@ if (MONGODB_URI) {
   console.warn("MONGODB_URI no definido: los datos se guardan en memoria y se pierden al reiniciar");
 }
 
-const servidor = crearApp(opciones).listen(PORT, () => {
+const app = crearApp(opciones);
+if (await app.locals.usuarios.asegurarAdministrador()) console.log("Administrador inicial confirmado (ADMIN_EMAIL)");
+
+const servidor = app.listen(PORT, () => {
   console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
 
