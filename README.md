@@ -29,6 +29,19 @@ Frontera entre capas:
 | `client/js/ui.js` | Pintar la interfaz | Hacer peticiones al servidor |
 | `client/js/api.js` | Comunicarse con la API | Tocar el DOM |
 
+## Tecnologías y justificación
+
+| Tecnología | Para qué | Por qué |
+|---|---|---|
+| Node.js 22 + Express 5 | Backend y API REST | Un solo lenguaje (JavaScript) en servidor y cliente; Express es mínimo y deja ver las capas. |
+| JavaScript con módulos ES (sin framework) en el cliente | Frontend | El proyecto es pequeño; separar `ui.js` y `api.js` basta para cumplir la separación interfaz / comunicación. |
+| MongoDB Atlas (M0, gratis) | Persistencia | Gratuito, sin servidor propio que mantener y accesible desde Cloud Run. |
+| bcryptjs | Hash de contraseñas | bcrypt es un estándar para contraseñas; la versión en JavaScript puro evita compilar código nativo en Docker y en el CI. |
+| Cookies firmadas con HMAC (`node:crypto`) | Sesión | Sin dependencias extra; cookie `HttpOnly` y `SameSite=Lax`, e id de sesión aleatorio guardado en la base de datos. |
+| `node:test` | Pruebas | Incluido en Node, sin dependencias. |
+| GitHub Actions | Integración continua | Está junto al repositorio; ejecuta las pruebas con un MongoDB de servicio. |
+| Docker + Google Cloud Run + Cloud Build | Despliegue continuo | Cloud Run ejecuta la imagen sin gestionar servidores y Cloud Build despliega al hacer push a `main`. |
+
 ## Ejecutar en local
 
 Requisitos: Node.js 22 o superior.
@@ -61,6 +74,18 @@ Ver `.env.example` (solo nombres, sin valores reales). Copia el archivo a `.env`
 | `MONGODB_URI` | Cadena de conexión de MongoDB Atlas (es un secreto). Obligatoria en producción; en desarrollo, si falta, los datos se guardan en memoria y se pierden al reiniciar. |
 | `MONGODB_DB` | Nombre de la base de datos (opcional; por defecto `procesos`). |
 | `SECRETO_SESION` | Secreto con el que se firman las cookies de sesión. Obligatorio en producción; en desarrollo, si falta, se genera uno aleatorio (las sesiones se pierden al reiniciar). |
+
+## Acceso de administrador
+
+El administrador no tiene contraseña por defecto. Se define con la variable `ADMIN_EMAIL`:
+
+1. Pon en `.env` (o en las variables de Cloud Run) `ADMIN_EMAIL=tu-email@ejemplo.com`.
+2. Regístrate en la aplicación con ese email y confirma el enlace recibido (en local aparece en el log del servidor). Si ya estabas registrada, el administrador se asigna al arrancar el servidor; hacerlo varias veces no cambia nada.
+3. Al iniciar sesión verás el panel «Administración de usuarios» con el listado y el botón de eliminar.
+
+## Secretos
+
+Ningún secreto está en el código ni en el historial de git: se comprobó buscando cadenas de conexión, contraseñas y archivos `.env` en todos los commits. `.env` está en `.gitignore` y solo se versiona `.env.example` (con los nombres). Los secretos son `MONGODB_URI` y `SECRETO_SESION`. Si alguno se publica por error, hay que **cambiarlo** (nueva contraseña del usuario de Atlas, nuevo secreto de sesión), no solo borrarlo del repositorio.
 
 ## Flujo de trabajo (GitHub Flow)
 
