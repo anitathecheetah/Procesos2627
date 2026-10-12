@@ -1,4 +1,6 @@
 # Procesos2627
+[![CI](https://github.com/anitathecheetah/Procesos2627/actions/workflows/ci.yml/badge.svg)](https://github.com/anitathecheetah/Procesos2627/actions/workflows/ci.yml)
+
 Proyecto de Ingeniería del Software curso 26-27
 Bienvenidos al Proyecto de Procesos 26-27
 
@@ -38,6 +40,14 @@ npm start
 
 La aplicación queda en http://localhost:3000 y la comprobación de salud en http://localhost:3000/api/salud.
 
+## Ejecutar las pruebas
+
+```bash
+npm test
+```
+
+Ejecuta con `node:test` todas las pruebas de `test/`. Hoy son pruebas de la API con peticiones HTTP reales (`test/api`). Se ejecutan automáticamente en GitHub Actions (workflow **CI**) en cada pull request y en cada cambio en `main`; no se integra un PR con el CI en rojo.
+
 ## Variables de entorno
 
 Ver `.env.example` (solo nombres, sin valores reales). Copia el archivo a `.env` para usarlo en local; `.env` no se sube al repositorio.
@@ -50,7 +60,7 @@ Ver `.env.example` (solo nombres, sin valores reales). Copia el archivo a `.env`
 ## Flujo de trabajo (GitHub Flow)
 
 1. Crear una rama por cambio: `git switch -c feature/<descripcion>`.
-2. Programar y ejecutar `npm test` en local (el comando se añade con el PBI-02).
+2. Programar y ejecutar `npm test` en local.
 3. `git push -u origin feature/<descripcion>` y abrir un pull request contra `main`.
 4. Esperar el CI en verde e integrar el PR (*Create a merge commit*).
 5. El cambio en `main` se despliega automáticamente (se configura con el PBI-03).
