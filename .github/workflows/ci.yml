@@ -9,6 +9,14 @@ on:
 jobs:
   pruebas:
     runs-on: ubuntu-latest
+    # MongoDB de servicio para las pruebas de contrato del repositorio real.
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    env:
+      MONGODB_URI_PRUEBA: mongodb://localhost:27017
     steps:
       - name: Descargar el código
         uses: actions/checkout@v4
