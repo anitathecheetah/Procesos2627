@@ -4,6 +4,8 @@
 Proyecto de Ingeniería del Software curso 26-27
 Bienvenidos al Proyecto de Procesos 26-27
 
+**Aplicación desplegada:** https://procesos2627-960872498786.europe-west1.run.app (Google Cloud Run, se despliega solo con cada cambio en `main`).
+
 # Sprint 1: Desarrollar la arquitectura base del proyecto
 El objetivo del Sprint 1 es definir la arquitectura base de una aplicación tipo SaaS, organizada en capas y con gestión de usuarios.
 
@@ -93,7 +95,7 @@ Ningún secreto está en el código ni en el historial de git: se comprobó busc
 2. Programar y ejecutar `npm test` en local.
 3. `git push -u origin feature/<descripcion>` y abrir un pull request contra `main`.
 4. Esperar el CI en verde e integrar el PR (*Create a merge commit*).
-5. El cambio en `main` se despliega automáticamente (se configura con el PBI-03).
+5. El cambio en `main` se despliega automáticamente: un activador de Cloud Build construye la imagen con el `Dockerfile` y publica una revisión nueva en Cloud Run (guía en `docs/despliegue-cloud-run.md`).
 
 Al cerrar cada hito se etiqueta el último commit de `main` (`hito-1`, `hito-2`, `hito-3`).
 
