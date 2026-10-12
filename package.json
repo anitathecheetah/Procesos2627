@@ -1,0 +1,26 @@
+{
+  "name": "procesos2627",
+  "version": "0.1.0",
+  "description": "Arquitectura base de una aplicación SaaS en capas (Sprint 1)",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anitathecheetah/procesos2627.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/anitathecheetah/procesos2627/issues"
+  },
+  "homepage": "https://github.com/anitathecheetah/procesos2627#readme",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
