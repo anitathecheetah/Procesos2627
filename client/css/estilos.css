@@ -1,0 +1,20 @@
+:root { --fondo: #f6f7f9; --tarjeta: #fff; --texto: #1c2430; --suave: #5b6675; --marca: #2f5bea; --error: #b3261e; --ok: #1b7a3d; --borde: #d9dee6; }
+@media (prefers-color-scheme: dark) {
+  :root { --fondo: #12161c; --tarjeta: #1b212a; --texto: #e8ecf2; --suave: #9aa6b6; --marca: #7b9bff; --error: #ff8a80; --ok: #7ddc9a; --borde: #2c3542; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; background: var(--fondo); color: var(--texto); }
+main { max-width: 52rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+h1 { margin: 0 0 .25rem; font-size: 1.6rem; }
+.subtitulo { color: var(--suave); margin: 0 0 1.5rem; }
+.formularios { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); }
+.tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: .75rem; padding: 1.1rem; }
+.tarjeta h2 { margin: 0 0 .75rem; font-size: 1.1rem; }
+label { display: block; font-size: .85rem; color: var(--suave); margin-bottom: .75rem; }
+input { display: block; width: 100%; margin-top: .25rem; padding: .55rem .6rem; border: 1px solid var(--borde); border-radius: .5rem; background: var(--fondo); color: var(--texto); font: inherit; }
+button { padding: .55rem 1rem; border: 0; border-radius: .5rem; background: var(--marca); color: #fff; font: inherit; cursor: pointer; }
+button:disabled { opacity: .6; cursor: wait; }
+.mensaje { min-height: 1.3em; margin: .75rem 0 0; font-size: .9rem; }
+.mensaje[data-correcto="true"] { color: var(--ok); }
+.mensaje[data-correcto="false"] { color: var(--error); }
+#estado { font-size: .8rem; color: var(--suave); margin-top: 1.5rem; }

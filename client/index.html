@@ -4,11 +4,39 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Procesos 26-27</title>
+  <link rel="stylesheet" href="/css/estilos.css">
 </head>
 <body>
-  <h1>Procesos 26-27</h1>
-  <p>Arquitectura base del Sprint 1.</p>
-  <p id="estado">Comprobando el servidor...</p>
+  <main>
+    <h1>Procesos 26-27</h1>
+    <p class="subtitulo">Crea tu cuenta o inicia sesión.</p>
+    <p id="aviso-global" class="mensaje" role="status"></p>
+
+    <div class="formularios">
+      <section class="tarjeta">
+        <h2>Registro</h2>
+        <form id="form-registro" novalidate>
+          <label>Nombre <input name="nombre" autocomplete="name" required></label>
+          <label>Email <input name="email" type="email" autocomplete="email" required></label>
+          <label>Contraseña (mínimo 8 caracteres) <input name="password" type="password" autocomplete="new-password" required></label>
+          <button type="submit">Crear cuenta</button>
+          <p class="mensaje" role="status"></p>
+        </form>
+      </section>
+
+      <section class="tarjeta">
+        <h2>Iniciar sesión</h2>
+        <form id="form-login" novalidate>
+          <label>Email <input name="email" type="email" autocomplete="email" required></label>
+          <label>Contraseña <input name="password" type="password" autocomplete="current-password" required></label>
+          <button type="submit">Entrar</button>
+          <p class="mensaje" role="status"></p>
+        </form>
+      </section>
+    </div>
+
+    <p id="estado">Comprobando el servidor...</p>
+  </main>
   <script type="module" src="/js/main.js"></script>
 </body>
 </html>
