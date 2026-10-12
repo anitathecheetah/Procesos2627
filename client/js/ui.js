@@ -32,3 +32,16 @@ export function alEnviar(formulario, alEnviar) {
     }
   });
 }
+
+// Muestra la sesión (usuario) y oculta los formularios; con null hace lo contrario.
+export function mostrarSesion(usuario) {
+  document.getElementById("zona-sesion").hidden = !usuario;
+  document.getElementById("zona-formularios").hidden = Boolean(usuario);
+  if (usuario) {
+    document.getElementById("usuario-sesion").textContent = `${usuario.nombre} (${usuario.email}) · rol: ${usuario.rol}`;
+  }
+}
+
+export function alPulsarSalir(manejador) {
+  document.getElementById("boton-salir").addEventListener("click", manejador);
+}

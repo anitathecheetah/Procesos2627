@@ -2,6 +2,8 @@
 // Traduce peticiones HTTP a llamadas a la capa lógica y devuelve JSON.
 // No contiene reglas de negocio ni accede a datos directamente.
 import { Router } from "express";
+import { crearAutenticacion, exigirSesion } from "./autenticacion.js";
+import { borrarCookie, crearCookie, firmar } from "./cookies.js";
 
 const ESTADO_HTTP = {
   DATOS_INVALIDOS: 400,
@@ -24,8 +26,12 @@ const manejar = (fn) => async (req, res, next) => {
   }
 };
 
-export function crearRutasApi({ usuarios }) {
+export function crearRutasApi({ usuarios, sesiones, secreto, produccion = false }) {
   const router = Router();
+  const opcionesCookie = { maxAgeSegundos: Math.floor(sesiones.duracionMs / 1000), seguro: produccion };
+
+  // Todas las rutas saben quién es el usuario de la sesión (si la hay).
+  router.use(crearAutenticacion({ sesiones, secreto }));
 
   // Comprobación de que el servidor está vivo.
   router.get("/salud", (_req, res) => {
@@ -44,25 +50,39 @@ export function crearRutasApi({ usuarios }) {
     res.redirect("/?confirmado=1");
   }));
 
-  // Inicio de sesión local. (La sesión persistente llega con el PBI-07.)
+  // Inicio de sesión local: valida credenciales y abre una sesión con cookie firmada.
   router.post("/sesion", manejar(async (req, res) => {
-    res.status(200).json(await usuarios.iniciarSesion(req.body ?? {}));
+    const usuario = await usuarios.iniciarSesion(req.body ?? {});
+    const idSesion = await sesiones.iniciar(usuario.id);
+    res.setHeader("Set-Cookie", crearCookie(firmar(idSesion, secreto), opcionesCookie));
+    res.status(200).json(usuario);
   }));
 
-  // Listado (solo admin). Hito 1: el solicitante llega en la cabecera X-Usuario-Id
-  // (provisional; en el hito 2 se sustituye por la sesión).
-  router.get("/usuarios", manejar(async (req, res) => {
-    res.status(200).json(await usuarios.listar(req.get("X-Usuario-Id")));
+  // Sesión actual (la persona que está identificada).
+  router.get("/sesion", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await usuarios.obtener(req.usuarioId));
+  }));
+
+  // Cierre de sesión: se invalida en el servidor y se borra la cookie.
+  router.delete("/sesion", manejar(async (req, res) => {
+    await sesiones.cerrar(req.sesionId);
+    res.setHeader("Set-Cookie", borrarCookie(opcionesCookie));
+    res.status(204).end();
+  }));
+
+  // Listado (solo admin). El solicitante es el usuario de la sesión.
+  router.get("/usuarios", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await usuarios.listar(req.usuarioId));
   }));
 
   // Consultar si un usuario está activo (solo admin).
-  router.get("/usuarios/:id/activo", manejar(async (req, res) => {
-    res.status(200).json(await usuarios.usuarioActivo(req.get("X-Usuario-Id"), req.params.id));
+  router.get("/usuarios/:id/activo", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await usuarios.usuarioActivo(req.usuarioId, req.params.id));
   }));
 
   // Eliminar un usuario (admin o el propio usuario). Eliminación lógica.
-  router.delete("/usuarios/:id", manejar(async (req, res) => {
-    await usuarios.eliminar(req.get("X-Usuario-Id"), req.params.id);
+  router.delete("/usuarios/:id", exigirSesion, manejar(async (req, res) => {
+    await usuarios.eliminar(req.usuarioId, req.params.id);
     res.status(204).end();
   }));
 

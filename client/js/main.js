@@ -1,6 +1,6 @@
 // Punto de entrada del frontend: conecta la interfaz (ui.js) con el cliente de API (api.js).
-import { salud, registrar, iniciarSesion } from "./api.js";
-import { mostrarEstado, mostrarMensaje, alEnviar } from "./ui.js";
+import { salud, registrar, iniciarSesion, sesionActual, cerrarSesion } from "./api.js";
+import { mostrarEstado, mostrarMensaje, alEnviar, mostrarSesion, alPulsarSalir } from "./ui.js";
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -30,11 +30,29 @@ alEnviar(document.getElementById("form-login"), async (datos, formulario) => {
   try {
     const usuario = await iniciarSesion(datos);
     formulario.reset();
-    mostrarMensaje(`Sesión iniciada. Hola, ${usuario.nombre}.`, true, formulario);
+    mostrarMensaje("", true, formulario);
+    mostrarSesion(usuario);
   } catch (error) {
     mostrarMensaje(textoDeError(error), false, formulario);
   }
 });
+
+alPulsarSalir(async () => {
+  try {
+    await cerrarSesion();
+    mostrarSesion(null);
+    mostrarMensaje("Has cerrado la sesión.", true);
+  } catch (error) {
+    mostrarMensaje(textoDeError(error), false);
+  }
+});
+
+// Al cargar la página se comprueba si ya hay una sesión (la cookie persiste al recargar).
+try {
+  mostrarSesion(await sesionActual());
+} catch {
+  mostrarSesion(null);
+}
 
 if (new URLSearchParams(location.search).has("confirmado")) {
   mostrarMensaje("Email confirmado. Ya puedes iniciar sesión.", true);
