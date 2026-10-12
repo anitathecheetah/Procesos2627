@@ -38,11 +38,38 @@ export function crearServicioUsuarios(repositorio) {
       await exigirAdmin(repositorio, solicitanteId);
       return (await repositorio.listar()).map(publico);
     },
+
+    // Consultar si un usuario está activo (confirmado y no eliminado): solo administradores.
+    async usuarioActivo(solicitanteId, id) {
+      await exigirAdmin(repositorio, solicitanteId);
+      const usuario = await repositorio.buscarPorId(id);
+      if (!usuario) throw new ErrorLogica("NO_ENCONTRADO", "El usuario no existe");
+      return { id: usuario.id, activo: usuario.estado === "activo" };
+    },
+
+    // Eliminación lógica: la puede hacer un administrador o el propio usuario.
+    async eliminar(solicitanteId, id) {
+      const solicitante = await identificar(repositorio, solicitanteId);
+      if (solicitante.rol !== "admin" && solicitante.id !== id) {
+        throw new ErrorLogica("PROHIBIDO", "Solo puedes eliminar tu propio usuario");
+      }
+      const usuario = await repositorio.buscarPorId(id);
+      if (!usuario) throw new ErrorLogica("NO_ENCONTRADO", "El usuario no existe");
+      await repositorio.actualizar({ ...usuario, estado: "eliminado" });
+    },
   };
 }
 
-async function exigirAdmin(repositorio, solicitanteId) {
+// Un solicitante eliminado deja de estar identificado.
+async function identificar(repositorio, solicitanteId) {
   const solicitante = solicitanteId ? await repositorio.buscarPorId(solicitanteId) : null;
-  if (!solicitante) throw new ErrorLogica("NO_AUTENTICADO", "Debes identificarte");
+  if (!solicitante || solicitante.estado === "eliminado") {
+    throw new ErrorLogica("NO_AUTENTICADO", "Debes identificarte");
+  }
+  return solicitante;
+}
+
+async function exigirAdmin(repositorio, solicitanteId) {
+  const solicitante = await identificar(repositorio, solicitanteId);
   if (solicitante.rol !== "admin") throw new ErrorLogica("PROHIBIDO", "Solo un administrador puede hacer esto");
 }
