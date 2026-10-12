@@ -5,17 +5,26 @@ import { fileURLToPath } from "node:url";
 import { crearRutasApi } from "./api/rutas.js";
 import { crearRepositorioMemoria } from "./data/repositorioMemoria.js";
 import { crearServicioUsuarios } from "./logic/usuarios.js";
+import { crearCifradorBcrypt } from "./logic/cifrador.js";
 
 const dirCliente = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "client");
 
 // Por defecto se monta con el repositorio en memoria; las pruebas pueden inyectar el suyo.
-export function crearApp({ repositorio = crearRepositorioMemoria() } = {}) {
+// Sin servicio de correo todavía: el enlace de confirmación se escribe en el log del servidor.
+const avisarPorLog = (usuario, token) =>
+  console.log(`Confirmación de ${usuario.email}: /api/confirmar?token=${token}`);
+
+export function crearApp({
+  repositorio = crearRepositorioMemoria(),
+  cifrador = crearCifradorBcrypt(),
+  notificar = avisarPorLog,
+} = {}) {
   const app = express();
 
   app.use(express.json());
 
   // API
-  app.use("/api", crearRutasApi({ usuarios: crearServicioUsuarios(repositorio) }));
+  app.use("/api", crearRutasApi({ usuarios: crearServicioUsuarios(repositorio, { cifrador, notificar }) }));
   app.use("/api", (_req, res) => {
     res.status(404).json({ error: "Ruta no encontrada", codigo: "NO_ENCONTRADO" });
   });

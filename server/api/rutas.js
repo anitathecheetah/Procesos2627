@@ -9,6 +9,8 @@ const ESTADO_HTTP = {
   PROHIBIDO: 403,
   NO_ENCONTRADO: 404,
   EMAIL_DUPLICADO: 409,
+  CREDENCIALES_INVALIDAS: 401,
+  CUENTA_PENDIENTE: 403,
 };
 
 // Envuelve un manejador async y traduce los errores de la lógica a {error, codigo}.
@@ -34,6 +36,17 @@ export function crearRutasApi({ usuarios }) {
   router.post("/usuarios", manejar(async (req, res) => {
     const usuario = await usuarios.alta(req.body ?? {});
     res.status(201).json(usuario);
+  }));
+
+  // Confirmación del email (enlace recibido por el usuario). Redirige a la página principal.
+  router.get("/confirmar", manejar(async (req, res) => {
+    await usuarios.confirmar(req.query.token);
+    res.redirect("/?confirmado=1");
+  }));
+
+  // Inicio de sesión local. (La sesión persistente llega con el PBI-07.)
+  router.post("/sesion", manejar(async (req, res) => {
+    res.status(200).json(await usuarios.iniciarSesion(req.body ?? {}));
   }));
 
   // Listado (solo admin). Hito 1: el solicitante llega en la cabecera X-Usuario-Id
