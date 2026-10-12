@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "mongodb": "^6.10.0"
   }
 }
