@@ -58,6 +58,14 @@ export function crearApp({
   // Frontend (mismo origen que la API)
   app.use(express.static(dirCliente));
 
+  // JSON mal formado en el cuerpo de la petición: 400 en lugar de 500.
+  app.use((err, _req, res, next) => {
+    if (err.type === "entity.parse.failed") {
+      return res.status(400).json({ error: "El cuerpo de la petición no es un JSON válido", codigo: "DATOS_INVALIDOS" });
+    }
+    next(err);
+  });
+
   // Errores no controlados: siempre JSON {error, codigo}
   app.use((err, _req, res, _next) => {
     log.error("Error no controlado", { mensaje: err.message });

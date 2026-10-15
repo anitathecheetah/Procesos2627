@@ -4,6 +4,7 @@
 import { Router } from "express";
 import { crearAutenticacion, exigirSesion } from "./autenticacion.js";
 import { borrarCookie, crearCookie, firmar } from "./cookies.js";
+import { validarPassword } from "../logic/politicaPassword.js";
 
 const ESTADO_HTTP = {
   DATOS_INVALIDOS: 400,
@@ -36,6 +37,15 @@ export function crearRutasApi({ usuarios, sesiones, secreto, produccion = false 
   // Comprobación de que el servidor está vivo.
   router.get("/salud", (_req, res) => {
     res.status(200).json({ estado: "ok" });
+  });
+
+  // Política de contraseñas (VARIANTE-1). Pública: no exige sesión.
+  router.post("/prueba/password", (req, res) => {
+    const password = req.body?.password;
+    if (typeof password !== "string") {
+      return res.status(400).json({ error: "El campo 'password' es obligatorio y debe ser texto" });
+    }
+    res.status(200).json(validarPassword(password));
   });
 
   // Alta de usuario (cualquiera). Queda pendiente de confirmar el email.
