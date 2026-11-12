@@ -11,7 +11,7 @@ if (MONGODB_URI) {
   // Con MONGODB_URI los datos van a MongoDB (persisten entre reinicios).
   const { conectarBaseDatos } = await import("./data/conexion.js");
   baseDatos = await conectarBaseDatos(MONGODB_URI, MONGODB_DB);
-  opciones = { repositorio: baseDatos.repositorio, repositorioSesiones: baseDatos.repositorioSesiones };
+  opciones = { repositorio: baseDatos.repositorio, repositorioSesiones: baseDatos.repositorioSesiones, dominioRepos: baseDatos.dominio };
   console.log("Almacenamiento: MongoDB");
 } else if (NODE_ENV === "production") {
   throw new Error("Falta la variable de entorno MONGODB_URI");
