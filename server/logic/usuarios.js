@@ -112,6 +112,11 @@ export function crearServicioUsuarios(repositorio, { cifrador, notificar = () =>
       return { id: usuario.id, activo: usuario.estado === "activo" };
     },
 
+    // Para otros servicios: corta con 401/403 si el solicitante no es un administrador identificado.
+    async exigirAdministrador(solicitanteId) {
+      await exigirAdmin(repositorio, solicitanteId);
+    },
+
     // Eliminación lógica: la puede hacer un administrador o el propio usuario.
     async eliminar(solicitanteId, id) {
       const solicitante = await identificar(repositorio, solicitanteId);

@@ -1,7 +1,7 @@
 // Capa API (presentación del backend).
 // Traduce peticiones HTTP a llamadas a la capa lógica y devuelve JSON.
 // No contiene reglas de negocio ni accede a datos directamente.
-import { Router } from "express";
+import express, { Router } from "express";
 import { crearAutenticacion, exigirSesion } from "./autenticacion.js";
 import { borrarCookie, crearCookie, firmar } from "./cookies.js";
 import { validarPassword } from "../logic/politicaPassword.js";
@@ -28,7 +28,7 @@ const manejar = (fn) => async (req, res, next) => {
   }
 };
 
-export function crearRutasApi({ usuarios, sesiones, secreto, produccion = false }) {
+export function crearRutasApi({ usuarios, importacion, sesiones, secreto, produccion = false }) {
   const router = Router();
   const opcionesCookie = { maxAgeSegundos: Math.floor(sesiones.duracionMs / 1000), seguro: produccion };
 
@@ -95,6 +95,14 @@ export function crearRutasApi({ usuarios, sesiones, secreto, produccion = false 
   router.delete("/usuarios/:id", exigirSesion, manejar(async (req, res) => {
     await usuarios.eliminar(req.usuarioId, req.params.id);
     res.status(204).end();
+  }));
+
+  // Importar una clasificación en Excel (solo admin). El archivo va como cuerpo de la petición
+  // (.xlsx en binario) y los datos de la prueba en la query: idExterno, nombre, deporte, tipo, fecha, categoria, sexo.
+  router.post("/pruebas/importar", exigirSesion, express.raw({ type: () => true, limit: "10mb" }), manejar(async (req, res) => {
+    const { idExterno, nombre, deporte, tipo, fecha, categoria, sexo } = req.query;
+    const resumen = await importacion.importar(req.usuarioId, { idExterno, nombre, deporte, tipo, fecha, categoria, sexo }, req.body);
+    res.status(201).json(resumen);
   }));
 
   return router;
