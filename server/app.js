@@ -11,6 +11,7 @@ import { crearLogger } from "./logger.js";
 import { crearColeccionMemoria } from "./data/coleccionMemoria.js";
 import { UNICOS_DOMINIO } from "./data/indicesDominio.js";
 import { crearServicioDominio } from "./logic/dominio.js";
+import { crearServicioSanciones } from "./logic/sanciones.js";
 import { crearServicioImportacion } from "./logic/importacion.js";
 import { crearServicioSesiones } from "./logic/sesiones.js";
 import { crearRepositorioSesionesMemoria } from "./data/repositorioSesionesMemoria.js";
@@ -52,9 +53,11 @@ export function crearApp({
   app.locals.usuarios = usuarios; // para tareas de arranque (index.js)
   const dominio = crearServicioDominio(dominioRepos);
   const importacion = crearServicioImportacion({ repos: dominioRepos, dominio, usuarios, log });
+  const sanciones = crearServicioSanciones({ repos: dominioRepos, usuarios, log });
   app.use("/api", crearRutasApi({
     usuarios,
     importacion,
+    sanciones,
     sesiones: crearServicioSesiones(repositorioSesiones),
     secreto,
     produccion: process.env.NODE_ENV === "production",

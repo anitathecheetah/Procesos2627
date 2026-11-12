@@ -26,7 +26,7 @@ export const cuentaParaElo = (estado) => estado === ESTADOS_RESULTADO.FINALIZADO
 // Acciones del acta de sanciones.
 export const ACCIONES_SANCION = Object.freeze({
   DSQ: "Descalificar",
-  ST: "Stop and go / penalización de tiempo",
+  ST: "Sanción por tiempo",
 });
 
 // Infracciones del acta.
