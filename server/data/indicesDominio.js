@@ -1,0 +1,24 @@
+// Índices de las colecciones del dominio. Los `unico` son las mismas reglas que
+// `UNICOS_DOMINIO` impone en memoria, para que ambos repositorios se comporten igual.
+export const UNICOS_DOMINIO = {
+  atletas: [["clave"]],
+  clubes: [["clave"]],
+  pertenencias: [["atletaId", "temporada"]],
+  pruebas: [["idExterno"]],
+  resultados: [["pruebaId", "atletaId"]],
+  sanciones: [],
+};
+
+export const INDICES_DOMINIO = Object.fromEntries(
+  Object.entries({
+    atletas: [],
+    clubes: [],
+    pertenencias: [{ campos: ["clubId", "temporada"] }],
+    pruebas: [{ campos: ["deporte", "fecha"] }],
+    resultados: [{ campos: ["atletaId"] }, { campos: ["pruebaId", "posicion"] }],
+    sanciones: [{ campos: ["pruebaId", "dorsal"] }],
+  }).map(([nombre, extra]) => [
+    nombre,
+    [...UNICOS_DOMINIO[nombre].map((campos) => ({ campos, unico: true })), ...extra],
+  ]),
+);
