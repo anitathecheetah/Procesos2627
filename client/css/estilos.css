@@ -34,3 +34,6 @@ select { display: block; width: 100%; margin-top: .25rem; padding: .55rem .6rem;
 button.enlace, td button.enlace { padding: 0; background: none; border: 0; color: var(--marca); text-align: left; text-decoration: underline; cursor: pointer; }
 .tabla-desplazable { overflow-x: auto; }
 #vista-detalle h3 { margin: .75rem 0 .1rem; }
+#zona-ranking { margin-bottom: 1rem; }
+.paginador { display: flex; gap: .75rem; align-items: center; margin: .75rem 0; }
+#ranking-recalcular { background: transparent; color: var(--marca); border: 1px solid var(--marca); }

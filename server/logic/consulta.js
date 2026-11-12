@@ -108,10 +108,28 @@ export function crearServicioConsulta({ repos }) {
         };
       }));
       historial.sort((a, b) => b.prueba.fecha.localeCompare(a.prueba.fecha));
+
+      // Elo por deporte: rating actual y su evolución prueba a prueba (si ya se ha calculado el ranking).
+      const elo = [];
+      for (const deporte of DEPORTES) {
+        const rating = await repos.ratings.buscarUno({ atletaId: id, deporte });
+        if (!rating) continue;
+        const pasos = (await repos.historialElo.listar({ atletaId: id, deporte })).sort((a, b) => a.fecha.localeCompare(b.fecha));
+        elo.push({
+          deporte,
+          rating: Math.round(rating.rating),
+          pruebas: rating.pruebas,
+          historial: await Promise.all(pasos.map(async (h) => ({
+            pruebaId: h.pruebaId, prueba: (await prueba(h.pruebaId)).nombre, fecha: h.fecha, posicion: h.posicion,
+            participantes: h.participantes, antes: Math.round(h.ratingAntes), despues: Math.round(h.ratingDespues),
+          }))),
+        });
+      }
       return {
         atleta: { id: atleta.id, nombre: atleta.nombre, anioNacimiento: atleta.anioNacimiento, ...(atleta.sexo ? { sexo: atleta.sexo } : {}) },
         clubes: clubes.sort((a, b) => b.temporada.localeCompare(a.temporada)),
         resultados: historial,
+        elo,
       };
     },
   };

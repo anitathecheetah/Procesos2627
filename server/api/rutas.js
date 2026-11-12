@@ -29,7 +29,7 @@ const manejar = (fn) => async (req, res, next) => {
   }
 };
 
-export function crearRutasApi({ usuarios, importacion, sanciones, consulta, sesiones, secreto, produccion = false }) {
+export function crearRutasApi({ usuarios, importacion, sanciones, consulta, ranking, sesiones, secreto, produccion = false }) {
   const router = Router();
   const opcionesCookie = { maxAgeSegundos: Math.floor(sesiones.duracionMs / 1000), seguro: produccion };
 
@@ -110,6 +110,15 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, sesi
   }));
   router.get("/atletas/:id", manejar(async (req, res) => {
     res.status(200).json(await consulta.fichaAtleta(req.params.id));
+  }));
+
+  // Ranking Elo de un deporte (público, paginado) y su recálculo (solo admin).
+  router.get("/ranking/:deporte", manejar(async (req, res) => {
+    const { pagina, tamano, minPruebas, sexo } = req.query;
+    res.status(200).json(await ranking.ranking(req.params.deporte, { pagina, tamano, minPruebas, sexo }));
+  }));
+  router.post("/ranking/:deporte/recalcular", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await ranking.recalcular(req.usuarioId, req.params.deporte));
   }));
 
   // Importar una clasificación en Excel (solo admin). El archivo va como cuerpo de la petición

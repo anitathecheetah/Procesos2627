@@ -28,6 +28,36 @@
       <p id="aviso-admin" class="mensaje" role="status"></p>
     </section>
 
+    <section id="zona-ranking" class="tarjeta">
+      <h2>Ranking Elo</h2>
+      <label>Deporte
+        <select id="ranking-deporte">
+          <option value="duatlon">Duatlón</option>
+          <option value="triatlon">Triatlón</option>
+        </select>
+      </label>
+      <label>Categoría
+        <select id="ranking-sexo">
+          <option value="M">Masculino</option>
+          <option value="F">Femenino</option>
+          <option value="">Todos</option>
+        </select>
+      </label>
+      <div class="tabla-desplazable">
+        <table id="tabla-ranking">
+          <thead><tr><th>#</th><th>Atleta</th><th>Club</th><th>Elo</th><th>Pruebas</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="paginador">
+        <button id="ranking-anterior" type="button">← Anterior</button>
+        <span id="ranking-pagina" class="suave"></span>
+        <button id="ranking-siguiente" type="button">Siguiente →</button>
+      </div>
+      <button id="ranking-recalcular" type="button" hidden>Recalcular el ranking</button>
+      <p id="aviso-ranking" class="mensaje" role="status"></p>
+    </section>
+
     <section id="zona-resultados" class="tarjeta">
       <h2>Resultados</h2>
       <div id="vista-pruebas">

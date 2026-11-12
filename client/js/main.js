@@ -5,6 +5,7 @@ import {
   alPulsarEliminarCuenta, confirmar, mostrarAdministracion, mostrarAvisoAdmin,
 } from "./ui.js";
 import "./resultados.js";
+import { mostrarBotonRecalcular } from "./ranking.js";
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -21,6 +22,7 @@ let usuarioActual = null;
 // Muestra la sesión y, si la persona es administradora, el panel de usuarios.
 async function mostrarSesionCompleta(usuario) {
   usuarioActual = usuario;
+  mostrarBotonRecalcular(usuario?.rol === "admin");
   mostrarSesion(usuario);
   if (usuario?.rol === "admin") await cargarAdministracion();
   else mostrarAdministracion(null);

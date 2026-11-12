@@ -49,3 +49,8 @@ export const listarPruebas = (deporte) => peticion("GET", `/pruebas${deporte ? `
 export const detallePrueba = (id) => peticion("GET", `/pruebas/${encodeURIComponent(id)}`);
 export const buscarAtletas = (q) => peticion("GET", `/atletas?q=${encodeURIComponent(q)}`);
 export const fichaAtleta = (id) => peticion("GET", `/atletas/${encodeURIComponent(id)}`);
+
+// --- Ranking Elo ---
+export const ranking = (deporte, sexo, pagina = 1) =>
+  peticion("GET", `/ranking/${encodeURIComponent(deporte)}?pagina=${pagina}&tamano=25${sexo ? `&sexo=${sexo}` : ""}`);
+export const recalcularRanking = (deporte) => peticion("POST", `/ranking/${encodeURIComponent(deporte)}/recalcular`);

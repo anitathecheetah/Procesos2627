@@ -7,6 +7,8 @@ export const UNICOS_DOMINIO = {
   pruebas: [["idExterno"]],
   resultados: [["pruebaId", "atletaId"]],
   sanciones: [],
+  ratings: [["deporte", "atletaId"]],
+  historialElo: [["deporte", "atletaId", "pruebaId"]],
 };
 
 export const INDICES_DOMINIO = Object.fromEntries(
@@ -17,6 +19,8 @@ export const INDICES_DOMINIO = Object.fromEntries(
     pruebas: [{ campos: ["deporte", "fecha"] }],
     resultados: [{ campos: ["atletaId"] }, { campos: ["pruebaId", "posicion"] }],
     sanciones: [{ campos: ["pruebaId", "dorsal"] }],
+    ratings: [{ campos: ["deporte", "rating"] }],
+    historialElo: [{ campos: ["atletaId", "fecha"] }],
   }).map(([nombre, extra]) => [
     nombre,
     [...UNICOS_DOMINIO[nombre].map((campos) => ({ campos, unico: true })), ...extra],
