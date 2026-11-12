@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 import { MongoClient } from "mongodb";
 import { conectarBaseDatos } from "../../server/data/conexion.js";
 import { pruebasDeContrato } from "./contrato.js";
+import { pruebasContratoDominio } from "./contratoDominio.js";
 
 const URI = process.env.MONGODB_URI_PRUEBA;
 const sinBd = { skip: URI ? false : "Define MONGODB_URI_PRUEBA para ejecutar las pruebas con MongoDB" };
@@ -27,6 +28,11 @@ async function nuevaBd() {
 pruebasDeContrato("mongodb", async () => {
   const { conexion, limpiar } = await nuevaBd();
   return { repo: conexion.repositorio, limpiar };
+}, sinBd);
+
+pruebasContratoDominio("mongodb", async () => {
+  const { conexion, limpiar } = await nuevaBd();
+  return { repos: conexion.dominio, limpiar };
 }, sinBd);
 
 test("[mongodb] ERROR: un email repetido se rechaza por el índice único", sinBd, async () => {
