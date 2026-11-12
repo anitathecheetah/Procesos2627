@@ -1,7 +1,7 @@
 // Repositorio genérico en memoria para las entidades del dominio deportivo
 // (atletas, clubes, pertenencias, pruebas, resultados, sanciones).
 // Contrato (idéntico en coleccionMongo.js):
-//   crear, actualizar, buscarPorId, buscarUno(filtro), listar(filtro), eliminar(id)
+//   crear, crearVarios(lista), actualizar, buscarPorId, buscarUno(filtro), listar(filtro), eliminar(id), eliminarPor(filtro)
 // `unicos` es una lista de listas de campos que no pueden repetirse (en MongoDB, índices únicos).
 export function crearColeccionMemoria({ unicos = [] } = {}) {
   const datos = new Map();
@@ -17,6 +17,10 @@ export function crearColeccionMemoria({ unicos = [] } = {}) {
       if (datos.has(entidad.id) || repetido(entidad)) throw new Error("Entidad duplicada");
       datos.set(entidad.id, copia(entidad));
       return copia(entidad);
+    },
+    async crearVarios(lista) {
+      for (const e of lista) await this.crear(e);
+      return lista.length;
     },
     async actualizar(entidad) {
       if (!datos.has(entidad.id)) return null;
@@ -35,6 +39,12 @@ export function crearColeccionMemoria({ unicos = [] } = {}) {
     },
     async eliminar(id) {
       return datos.delete(id);
+    },
+    // Borra todo lo que coincide con el filtro y devuelve cuántos eran.
+    async eliminarPor(filtro) {
+      const ids = [...datos.values()].filter((d) => coincide(d, filtro)).map((d) => d.id);
+      ids.forEach((id) => datos.delete(id));
+      return ids.length;
     },
   };
 }

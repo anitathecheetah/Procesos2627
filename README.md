@@ -99,6 +99,10 @@ Ningún secreto está en el código ni en el historial de git: se comprobó busc
 
 Al cerrar cada hito se etiqueta el último commit de `main` (`hito-1`, `hito-2`, `hito-3`).
 
+## Ranking Elo de duatlón y triatlón
+
+Cada prueba importada se trata como duelos entre todos los participantes según su posición final; los DNF, DNS y descalificados no puntúan. El ranking se recalcula por fecha y es determinista. La fórmula, sus decisiones y los límites están en [docs/ranking-elo.md](docs/ranking-elo.md). La importación de Excel está en [docs/importacion-excel.md](docs/importacion-excel.md) y el modelo de datos en [docs/modelo-de-datos.md](docs/modelo-de-datos.md).
+
 ## Licencia
 
 MIT. Consulta el archivo [LICENSE](LICENSE).

@@ -58,4 +58,12 @@ export function pruebasContratoDominio(nombre, preparar, opciones = {}) {
     copia.nombre = "manipulado";
     assert.equal((await atletas.buscarPorId("a1")).nombre, "ANA|1990");
   });
+
+  prueba("crearVarios inserta todo y eliminarPor borra por filtro devolviendo cuántos", async ({ atletas }) => {
+    assert.equal(await atletas.crearVarios([atleta("a1", "ANA|1990"), atleta("a2", "BETO|1985", { anioNacimiento: 1985 }), atleta("a3", "CARLA|1985", { anioNacimiento: 1985 })]), 3);
+    assert.equal(await atletas.crearVarios([]), 0);
+    assert.equal(await atletas.eliminarPor({ anioNacimiento: 1985 }), 2);
+    assert.deepEqual((await atletas.listar()).map((a) => a.id), ["a1"]);
+    assert.equal(await atletas.eliminarPor({ anioNacimiento: 2000 }), 0);
+  });
 }

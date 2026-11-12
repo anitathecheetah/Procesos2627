@@ -14,6 +14,11 @@ export function crearColeccionMongo(coleccion) {
       await coleccion.insertOne(aDocumento(entidad));
       return structuredClone(entidad);
     },
+    async crearVarios(lista) {
+      if (!lista.length) return 0;
+      const { insertedCount } = await coleccion.insertMany(lista.map(aDocumento));
+      return insertedCount;
+    },
     async actualizar(entidad) {
       const { matchedCount } = await coleccion.replaceOne({ _id: entidad.id }, aDocumento(entidad));
       return matchedCount ? structuredClone(entidad) : null;
@@ -26,6 +31,10 @@ export function crearColeccionMongo(coleccion) {
     },
     async listar(filtro = {}) {
       return (await coleccion.find(aFiltro(filtro)).toArray()).map(aEntidad);
+    },
+    async eliminarPor(filtro) {
+      const { deletedCount } = await coleccion.deleteMany(aFiltro(filtro));
+      return deletedCount;
     },
     async eliminar(id) {
       const { deletedCount } = await coleccion.deleteOne({ _id: id });
