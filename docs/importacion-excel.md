@@ -38,3 +38,13 @@ Si algo falla a mitad de la importación, se borran la prueba y los resultados y
 ## Datos reales
 
 Los Excel reales contienen nombres y años de nacimiento (incluidos menores). **No se suben al repositorio**; las pruebas usan Excel sintéticos (`test/helpers/excelSintetico.js`).
+
+## Script de importación
+
+Para subir uno o varios Excel sin escribir `curl` a mano:
+
+```
+node scripts/importar.mjs --fecha 2026-02-15 --email admin@correo.es "ruta\al\archivo.xlsx"
+```
+
+Pide la contraseña (o la lee de `IMPORTAR_PASSWORD`). Opciones: `--url` (por defecto `http://localhost:3000`) y `--deporte`. Del nombre del archivo, con el formato de la descarga (`2449-5790_aguilas-duatlon_elite-masculino.xlsx`), deduce el identificador, el nombre, el deporte, la categoría y el sexo. La fecha hay que indicarla porque el nombre del archivo no la trae; usa un comando por cada fecha.
