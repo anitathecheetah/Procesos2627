@@ -8,6 +8,10 @@ import { crearRepositorioMemoria } from "./data/repositorioMemoria.js";
 import { crearServicioUsuarios } from "./logic/usuarios.js";
 import { crearCifradorBcrypt } from "./logic/cifrador.js";
 import { crearLogger } from "./logger.js";
+import { crearColeccionMemoria } from "./data/coleccionMemoria.js";
+import { UNICOS_DOMINIO } from "./data/indicesDominio.js";
+import { crearServicioDominio } from "./logic/dominio.js";
+import { crearServicioImportacion } from "./logic/importacion.js";
 import { crearServicioSesiones } from "./logic/sesiones.js";
 import { crearRepositorioSesionesMemoria } from "./data/repositorioSesionesMemoria.js";
 
@@ -34,6 +38,7 @@ export function crearApp({
   cifrador = crearCifradorBcrypt(),
   notificar = avisarPorLog,
   repositorioSesiones = crearRepositorioSesionesMemoria(),
+  dominioRepos = Object.fromEntries(Object.entries(UNICOS_DOMINIO).map(([n, unicos]) => [n, crearColeccionMemoria({ unicos })])),
   secreto = obtenerSecreto(),
   emailAdmin = process.env.ADMIN_EMAIL,
   log = logPorDefecto,
@@ -45,8 +50,11 @@ export function crearApp({
   // API
   const usuarios = crearServicioUsuarios(repositorio, { cifrador, notificar, emailAdmin, log });
   app.locals.usuarios = usuarios; // para tareas de arranque (index.js)
+  const dominio = crearServicioDominio(dominioRepos);
+  const importacion = crearServicioImportacion({ repos: dominioRepos, dominio, usuarios, log });
   app.use("/api", crearRutasApi({
     usuarios,
+    importacion,
     sesiones: crearServicioSesiones(repositorioSesiones),
     secreto,
     produccion: process.env.NODE_ENV === "production",
