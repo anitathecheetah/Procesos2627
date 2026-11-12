@@ -28,6 +28,27 @@
       <p id="aviso-admin" class="mensaje" role="status"></p>
     </section>
 
+    <section id="zona-resultados" class="tarjeta">
+      <h2>Resultados</h2>
+      <div id="vista-pruebas">
+        <label>Deporte
+          <select id="filtro-deporte">
+            <option value="">Todos</option>
+            <option value="duatlon">Duatlón</option>
+            <option value="triatlon">Triatlón</option>
+          </select>
+        </label>
+        <ul id="lista-pruebas" class="lista"></ul>
+        <form id="form-buscar" class="buscador" novalidate>
+          <label>Buscar atleta <input name="q" placeholder="Nombre o apellidos" autocomplete="off"></label>
+          <button type="submit">Buscar</button>
+        </form>
+        <ul id="lista-atletas" class="lista"></ul>
+      </div>
+      <div id="vista-detalle" hidden></div>
+      <p id="aviso-resultados" class="mensaje" role="status"></p>
+    </section>
+
     <div class="formularios" id="zona-formularios">
       <section class="tarjeta">
         <h2>Registro</h2>

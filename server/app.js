@@ -11,6 +11,7 @@ import { crearLogger } from "./logger.js";
 import { crearColeccionMemoria } from "./data/coleccionMemoria.js";
 import { UNICOS_DOMINIO } from "./data/indicesDominio.js";
 import { crearServicioDominio } from "./logic/dominio.js";
+import { crearServicioConsulta } from "./logic/consulta.js";
 import { crearServicioSanciones } from "./logic/sanciones.js";
 import { crearServicioImportacion } from "./logic/importacion.js";
 import { crearServicioSesiones } from "./logic/sesiones.js";
@@ -58,6 +59,7 @@ export function crearApp({
     usuarios,
     importacion,
     sanciones,
+    consulta: crearServicioConsulta({ repos: dominioRepos }),
     sesiones: crearServicioSesiones(repositorioSesiones),
     secreto,
     produccion: process.env.NODE_ENV === "production",

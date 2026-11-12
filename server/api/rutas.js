@@ -29,7 +29,7 @@ const manejar = (fn) => async (req, res, next) => {
   }
 };
 
-export function crearRutasApi({ usuarios, importacion, sanciones, sesiones, secreto, produccion = false }) {
+export function crearRutasApi({ usuarios, importacion, sanciones, consulta, sesiones, secreto, produccion = false }) {
   const router = Router();
   const opcionesCookie = { maxAgeSegundos: Math.floor(sesiones.duracionMs / 1000), seguro: produccion };
 
@@ -96,6 +96,20 @@ export function crearRutasApi({ usuarios, importacion, sanciones, sesiones, secr
   router.delete("/usuarios/:id", exigirSesion, manejar(async (req, res) => {
     await usuarios.eliminar(req.usuarioId, req.params.id);
     res.status(204).end();
+  }));
+
+  // Consultas públicas (como la web de resultados): no exigen sesión.
+  router.get("/pruebas", manejar(async (req, res) => {
+    res.status(200).json(await consulta.listarPruebas({ deporte: req.query.deporte, temporada: req.query.temporada }));
+  }));
+  router.get("/pruebas/:id", manejar(async (req, res) => {
+    res.status(200).json(await consulta.detallePrueba(req.params.id));
+  }));
+  router.get("/atletas", manejar(async (req, res) => {
+    res.status(200).json(await consulta.buscarAtletas(req.query.q));
+  }));
+  router.get("/atletas/:id", manejar(async (req, res) => {
+    res.status(200).json(await consulta.fichaAtleta(req.params.id));
   }));
 
   // Importar una clasificación en Excel (solo admin). El archivo va como cuerpo de la petición
