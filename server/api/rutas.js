@@ -4,6 +4,7 @@
 import express, { Router } from "express";
 import { crearAutenticacion, exigirSesion } from "./autenticacion.js";
 import { borrarCookie, crearCookie, firmar } from "./cookies.js";
+import { leerCsvSanciones } from "../logic/sanciones.js";
 import { validarPassword } from "../logic/politicaPassword.js";
 
 const ESTADO_HTTP = {
@@ -28,7 +29,7 @@ const manejar = (fn) => async (req, res, next) => {
   }
 };
 
-export function crearRutasApi({ usuarios, importacion, sesiones, secreto, produccion = false }) {
+export function crearRutasApi({ usuarios, importacion, sanciones, sesiones, secreto, produccion = false }) {
   const router = Router();
   const opcionesCookie = { maxAgeSegundos: Math.floor(sesiones.duracionMs / 1000), seguro: produccion };
 
@@ -103,6 +104,18 @@ export function crearRutasApi({ usuarios, importacion, sesiones, secreto, produc
     const { idExterno, nombre, deporte, tipo, fecha, categoria, sexo } = req.query;
     const resumen = await importacion.importar(req.usuarioId, { idExterno, nombre, deporte, tipo, fecha, categoria, sexo }, req.body);
     res.status(201).json(resumen);
+  }));
+
+  // Cargar las sanciones del acta (solo admin). Cuerpo: CSV de texto (dorsal;accion1;infraccion1;…;observaciones)
+  // o JSON { sanciones: [{ dorsal, pares: [{accion, infraccion}], observaciones }] }.
+  router.post("/pruebas/:id/sanciones", exigirSesion, express.text({ type: ["text/*"], limit: "1mb" }), manejar(async (req, res) => {
+    const filas = typeof req.body === "string" ? leerCsvSanciones(req.body) : req.body?.sanciones;
+    res.status(201).json(await sanciones.cargar(req.usuarioId, req.params.id, filas));
+  }));
+
+  // Sanciones de una prueba (públicas, como los resultados).
+  router.get("/pruebas/:id/sanciones", manejar(async (req, res) => {
+    res.status(200).json(await sanciones.deLaPrueba(req.params.id));
   }));
 
   return router;
