@@ -51,3 +51,30 @@ test("ERROR: sin sesión 401, usuario normal 403, archivo inválido 400", async 
     assert.equal((await subir(url, await entrar("admin@correo.es"), excel, "idExterno=1&nombre=P&deporte=nada&fecha=2026-01-01")).status, 400);
   } finally { cerrar(); }
 });
+
+test("sanciones: el administrador sube el CSV del acta y se ven en la prueba; errores 400/404/403/401", async () => {
+  const { url, entrar, cerrar } = await arrancar();
+  try {
+    const admin = await entrar("admin@correo.es");
+    const excel = await crearExcel([finalista("Ana López", 1995, "Club Uno", 67, 1, "00:52:00")]);
+    const { prueba } = await (await subir(url, admin, excel)).json();
+    const csv = (cookie, cuerpo, tipo = "text/csv") =>
+      fetch(`${url}/api/pruebas/${prueba.id}/sanciones`, { method: "POST", headers: { ...(cookie ? { Cookie: cookie } : {}), "Content-Type": tipo }, body: cuerpo });
+
+    assert.equal((await csv(null, "67;DSQ;LM")).status, 401);
+    assert.equal((await csv(await entrar("user@correo.es"), "67;DSQ;LM")).status, 403);
+    assert.equal((await csv(admin, "999;DSQ;LM")).status, 404);
+    assert.equal((await csv(admin, "67;XX;LM")).status, 400);
+
+    const ok = await csv(admin, "dorsal;accion1;infraccion1\n67;DSQ;LM");
+    assert.equal(ok.status, 201);
+    assert.deepEqual(await ok.json(), { cargadas: 1, descalificados: 1 });
+
+    const lista = await (await fetch(`${url}/api/pruebas/${prueba.id}/sanciones`)).json();
+    assert.deepEqual(lista[0].pares, [{ accion: "DSQ", infraccion: "LM" }]);
+
+    const json = await csv(admin, JSON.stringify({ sanciones: [{ dorsal: "67", pares: [{ accion: "ST", infraccion: "LM" }] }] }), "application/json");
+    assert.equal(json.status, 201);
+    assert.equal((await fetch(`${url}/api/pruebas/nada/sanciones`)).status, 404);
+  } finally { cerrar(); }
+});
