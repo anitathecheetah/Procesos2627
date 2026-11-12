@@ -43,3 +43,9 @@ export const sesionActual = () => peticion("GET", "/sesion");
 export const cerrarSesion = () => peticion("DELETE", "/sesion");
 export const listarUsuarios = () => peticion("GET", "/usuarios");
 export const eliminarUsuario = (id) => peticion("DELETE", `/usuarios/${id}`);
+
+// --- Resultados (consultas públicas) ---
+export const listarPruebas = (deporte) => peticion("GET", `/pruebas${deporte ? `?deporte=${encodeURIComponent(deporte)}` : ""}`);
+export const detallePrueba = (id) => peticion("GET", `/pruebas/${encodeURIComponent(id)}`);
+export const buscarAtletas = (q) => peticion("GET", `/atletas?q=${encodeURIComponent(q)}`);
+export const fichaAtleta = (id) => peticion("GET", `/atletas/${encodeURIComponent(id)}`);

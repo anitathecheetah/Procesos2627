@@ -4,6 +4,7 @@ import {
   mostrarEstado, mostrarMensaje, alEnviar, mostrarSesion, alPulsarSalir,
   alPulsarEliminarCuenta, confirmar, mostrarAdministracion, mostrarAvisoAdmin,
 } from "./ui.js";
+import "./resultados.js";
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
