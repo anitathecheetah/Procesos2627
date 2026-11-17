@@ -3,6 +3,9 @@
 import { NOMBRES_PARCIALES } from "./parciales.js";
 import { filtrarClasificacion, esMejorSegmento } from "./filtrosResultados.js";
 import { textoElo } from "./elo.js";
+import { crearPestanas } from "./pestanas.js";
+import { panelResumen, panelSplits, panelPrediccion } from "./vistaCarrera.js";
+import { el, enlace, tabla, formatearTiempo, formatearFecha } from "./dom.js";
 
 const DEPORTES = { duatlon: "Duatlón", triatlon: "Triatlón" };
 const ESTADOS = { finalizado: "", dnf: "DNF", dns: "DNS", dq: "Descalificado" };
@@ -11,57 +14,9 @@ const SANCIONES = {
   LM: "montar antes de la línea", OTH: "otras infracciones",
 };
 
-export function formatearTiempo(segundos) {
-  if (segundos === null || segundos === undefined) return "—";
-  const total = Math.round(segundos);
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
-
-export function formatearFecha(iso) {
-  const [a, m, d] = iso.split("-");
-  return `${d}/${m}/${a}`;
-}
-
 const textoSancion = (s) =>
   s.pares.map((p) => `${SANCIONES[p.accion] ?? p.accion} (${SANCIONES[p.infraccion] ?? p.infraccion})`).join("; ") +
   (s.observaciones ? ` — ${s.observaciones}` : "");
-
-export function el(etiqueta, texto, atributos = {}) {
-  const e = document.createElement(etiqueta);
-  if (texto !== undefined) e.textContent = texto;
-  Object.assign(e, atributos);
-  return e;
-}
-
-function enlace(texto, alPulsar) {
-  const b = el("button", texto, { type: "button", className: "enlace" });
-  b.addEventListener("click", alPulsar);
-  return b;
-}
-
-export function tabla(cabeceras, filas) {
-  const t = el("table");
-  const cabecera = el("tr");
-  cabeceras.forEach((c) => cabecera.append(el("th", c)));
-  t.append(el("thead"), el("tbody"));
-  t.tHead.append(cabecera);
-  for (const fila of filas) {
-    const tr = el("tr");
-    for (const celda of fila) {
-      const td = el("td");
-      if (celda instanceof Node) td.append(celda);
-      else td.textContent = celda ?? "";
-      tr.append(td);
-    }
-    t.tBodies[0].append(tr);
-  }
-  const envoltorio = el("div", undefined, { className: "tabla-desplazable" });
-  envoltorio.append(t);
-  return envoltorio;
-}
 
 export function mostrarPruebas(pruebas, alElegir) {
   const lista = document.getElementById("lista-pruebas");
@@ -120,7 +75,7 @@ function tablaMejores(nombres, mejores, alElegirAtleta) {
   return tabla(["Segmento", "Mejor tiempo", "Atleta"], filas);
 }
 
-export function mostrarDetallePrueba({ prueba, clasificacion, mejoresSegmentos }, { alElegirAtleta, alVolver }) {
+export function mostrarDetallePrueba({ prueba, clasificacion, mejoresSegmentos }, { alElegirAtleta, alVolver, alPredecir }) {
   const nombres = NOMBRES_PARCIALES[prueba.deporte] ?? [];
   const contenedor = el("div");
   const filtros = el("form", undefined, { className: "filtros", noValidate: true });
@@ -166,16 +121,25 @@ export function mostrarDetallePrueba({ prueba, clasificacion, mejoresSegmentos }
   };
   filtros.addEventListener("input", pintar);
 
-  alternarVista([
-    enlace("← Volver", alVolver),
-    el("h3", prueba.nombre),
-    el("p", `${formatearFecha(prueba.fecha)} · ${DEPORTES[prueba.deporte] ?? prueba.deporte}${prueba.categoria ? ` · ${prueba.categoria}` : ""}`, { className: "suave" }),
+  const datos = { prueba, clasificacion };
+  const clasificacionNodos = () => [
     el("h4", "Mejor tiempo de cada segmento"),
     tablaMejores(nombres, mejoresSegmentos, alElegirAtleta),
     el("h4", "Clasificación"),
     el("p", `${MARCA_MEJOR} marca el mejor tiempo del segmento. Elo: puntos del atleta antes de la prueba → después, y lo que ganó o perdió. Sale al recalcular el ranking del deporte; quien no termina no puntúa.`, { className: "suave" }),
     filtros,
     contenedor,
+  ];
+  alternarVista([
+    enlace("← Volver", alVolver),
+    el("h3", prueba.nombre),
+    el("p", `${formatearFecha(prueba.fecha)} · ${DEPORTES[prueba.deporte] ?? prueba.deporte}${prueba.categoria ? ` · ${prueba.categoria}` : ""}`, { className: "suave" }),
+    crearPestanas([
+      { id: "resumen", titulo: "Resumen", contenido: () => panelResumen(datos, { alElegirAtleta }) },
+      { id: "splits", titulo: "Splits", contenido: () => panelSplits(datos, { alElegirAtleta }) },
+      { id: "clasificacion", titulo: "Clasificación", contenido: clasificacionNodos },
+      { id: "prediccion", titulo: "Predicción", contenido: () => panelPrediccion(prueba, alPredecir) },
+    ]),
   ]);
   pintar();
 }

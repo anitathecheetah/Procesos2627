@@ -1,5 +1,5 @@
 // Conecta la vista de resultados (vistaResultados.js) con el cliente de API (api.js).
-import { listarPruebas, detallePrueba, buscarAtletas, fichaAtleta } from "./api.js";
+import { listarPruebas, detallePrueba, buscarAtletas, fichaAtleta, prediccion } from "./api.js";
 import {
   mostrarPruebas, mostrarAtletas, mostrarDetallePrueba, mostrarFichaAtleta, volverALaLista, mostrarAvisoResultados,
 } from "./vistaResultados.js";
@@ -15,7 +15,11 @@ async function intentar(accion) {
 }
 
 const abrirPrueba = (p) => intentar(async () => {
-  mostrarDetallePrueba(await detallePrueba(p.id), { alElegirAtleta: abrirAtleta, alVolver: volverALaLista });
+  mostrarDetallePrueba(await detallePrueba(p.id), {
+    alElegirAtleta: abrirAtleta,
+    alVolver: volverALaLista,
+    alPredecir: (prueba) => prediccion(prueba.deporte, { base: prueba.id, retrospectiva: true }),
+  });
 });
 const abrirAtleta = (a) => intentar(async () => {
   mostrarFichaAtleta(await fichaAtleta(a.id), { alElegirPrueba: abrirPrueba, alVolver: volverALaLista });

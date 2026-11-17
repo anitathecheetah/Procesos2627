@@ -1,5 +1,5 @@
 // Presentación de la predicción: solo construye el DOM. No hace peticiones (eso es api.js).
-import { el, tabla, formatearFecha } from "./vistaResultados.js";
+import { el, tabla, formatearFecha } from "./dom.js";
 import { porcentaje, textoRango, textoDiferencia } from "./formatoPrediccion.js";
 
 const normalizar = (t) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
@@ -25,7 +25,8 @@ export function actualizarControles() {
   if (!hayBase) casilla.checked = false;
 }
 
-export function mostrarPrediccion(datos) {
+// Nodos con el resumen y la tabla de una predicción (se usa en la tarjeta de predicción y en la página de cada prueba).
+export function construirPrediccion(datos) {
   const retro = datos.retrospectiva;
   const cabeceras = ["#", "Atleta", "Club", "Elo", "Posición media", "Victoria", "Podio", "Top 10", "Rango (80 %)", ...(retro ? ["Real", "Dif."] : [])];
   const filas = datos.filas.map((f) => [
@@ -43,10 +44,11 @@ export function mostrarPrediccion(datos) {
   const origen = datos.base ? `lista de salida: ${datos.base.nombre} (${formatearFecha(datos.base.fecha)})` : "lista de salida: los mejores del ranking";
   const resumen = [`${datos.filas.length} atletas`, origen, `${datos.simulaciones.toLocaleString("es-ES")} simulaciones`];
   if (retro && datos.errorMedio !== null) resumen.push(`error medio de ${String(datos.errorMedio).replace(".", ",")} puestos respecto al resultado real`);
-  document.getElementById("prediccion-resultado").replaceChildren(
-    el("p", resumen.join(" · "), { className: "suave" }),
-    tabla(cabeceras, filas),
-  );
+  return [el("p", resumen.join(" · "), { className: "suave" }), tabla(cabeceras, filas)];
+}
+
+export function mostrarPrediccion(datos) {
+  document.getElementById("prediccion-resultado").replaceChildren(...construirPrediccion(datos));
 }
 
 export function limpiarPrediccion() { document.getElementById("prediccion-resultado").replaceChildren(); }

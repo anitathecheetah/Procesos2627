@@ -1,14 +1,12 @@
 // Filtros y orden de la clasificación de una prueba. Sin DOM: se puede probar con node:test.
+import { tiempoDeSegmento } from "./segmentos.js";
 
 const normalizar = (texto) => String(texto ?? "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
 const contieneTodas = (texto, buscado) => {
   const t = normalizar(texto);
   return normalizar(buscado).split(/\s+/).filter(Boolean).every((palabra) => t.includes(palabra));
 };
-const tiempoDe = (fila, i) => {
-  const t = fila.estado === "finalizado" && Array.isArray(fila.parciales) ? fila.parciales[i] : null;
-  return typeof t === "number" && t > 0 ? t : null;
-};
+const tiempoDe = tiempoDeSegmento;
 
 // atleta y club: texto libre (todas las palabras, sin tildes ni mayúsculas).
 // orden: "posicion" (el de la clasificación) o el índice 0..4 del parcial por el que ordenar, de menor a mayor tiempo.
