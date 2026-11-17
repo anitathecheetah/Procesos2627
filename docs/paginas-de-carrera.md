@@ -16,6 +16,6 @@ Al abrir una prueba en **Resultados** se muestra con pestañas (se navega con el
 - Los abandonos y los finalistas con parciales incompletos no entran en puestos, medias ni mejores de segmento, pero siguen en la Clasificación.
 - Los cálculos están en `client/js/segmentos.js` (sin DOM, con pruebas) y las pestañas en `client/js/pestanas.js`.
 
-## Pendiente (hito S3 Hito 1)
+## Pendiente (hito S2 Hito 4)
 
 Gráficos «Carrera» y «Posiciones», comparar atletas, análisis por clubes, predicción visual con rangos, configuración de distancias y ritmos, y la repetición animada.
