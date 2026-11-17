@@ -1,7 +1,7 @@
 // Ritmos por segmento: min/100 m en natación, km/h en bici y min/km en carrera (no usa DOM).
 import test from "node:test";
 import assert from "node:assert/strict";
-import { DISTANCIAS, distanciasDe, textoRitmo, tipoDeRitmo, PERSONALIZADA } from "../../client/js/ritmos.js";
+import { DISTANCIAS, distanciasDe, textoRitmo, tipoDeRitmo, ritmosRealistas, sugerirDistancias, PERSONALIZADA } from "../../client/js/ritmos.js";
 
 const ESTANDAR_TRI = DISTANCIAS.triatlon.estandar.metros;
 
@@ -43,4 +43,29 @@ test("distanciasDe: predefinidas y personalizadas válidas o no", () => {
   assert.equal(distanciasDe("triatlon", PERSONALIZADA, [400, 0, 2500]), null);
   assert.equal(distanciasDe("triatlon", PERSONALIZADA, [400, 10000]), null);
   assert.equal(distanciasDe("triatlon", PERSONALIZADA), null);
+});
+
+// Medias reales del Campeonato de España de triatlón de Mérida: natación 9:53, T1 0:53, bici 28:39, T2 0:49, carrera 17:02.
+const MEDIAS_MERIDA = [593, 53, 1719, 49, 1022];
+
+test("con la distancia estándar las medias de un sprint dan ritmos imposibles, y se detecta", () => {
+  assert.equal(textoRitmo("triatlon", 2, 1719, DISTANCIAS.triatlon.estandar.metros), "83,8 km/h");
+  assert.equal(ritmosRealistas("triatlon", MEDIAS_MERIDA, DISTANCIAS.triatlon.estandar.metros), false);
+  assert.equal(ritmosRealistas("triatlon", MEDIAS_MERIDA, DISTANCIAS.triatlon.sprint.metros), true);
+});
+
+test("se sugiere el formato que encaja con los tiempos", () => {
+  assert.equal(sugerirDistancias("triatlon", MEDIAS_MERIDA), "sprint");
+  assert.equal(sugerirDistancias("triatlon", [1156, 109, 3893, 44, 2031]), "estandar", "natación 19:16, bici 1:04:53, carrera 33:51");
+  assert.equal(sugerirDistancias("triatlon", [230, 30, 620, 30, 480]), "supersprint");
+  assert.equal(sugerirDistancias("duatlon", [900, 30, 1800, 25, 450]), "sprint");
+  assert.equal(sugerirDistancias("duatlon", [1800, 40, 3600, 30, 900]), "estandar");
+});
+
+test("sin datos no se sugiere nada ni se juzga el realismo", () => {
+  assert.equal(sugerirDistancias("triatlon", [null, null, null, null, null]), null);
+  assert.equal(sugerirDistancias("triatlon", undefined), null);
+  assert.equal(sugerirDistancias("aquatlon", MEDIAS_MERIDA), null);
+  assert.equal(ritmosRealistas("triatlon", undefined, DISTANCIAS.triatlon.sprint.metros), true);
+  assert.equal(ritmosRealistas("triatlon", MEDIAS_MERIDA, null), true);
 });

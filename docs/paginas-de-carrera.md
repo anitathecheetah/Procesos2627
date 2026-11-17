@@ -15,8 +15,8 @@ Sobre las pestañas hay un selector de **distancias de la prueba**, y de ellas s
 
 - **Natación:** min por 100 m. **Bici:** km/h. **Carrera:** min por km (en duatlón, las dos carreras, cada una con su distancia). T1 y T2 solo tienen tiempo.
 - Los ritmos aparecen bajo cada media del **Resumen**, junto al tiempo de los 3 mejores de cada segmento y en **Splits** con el botón **Ritmo**. Los ritmos en min:seg se truncan al segundo, como en Split Lab.
-- Distancias predefinidas: triatlón súper sprint (300 m · 8 km · 2,5 km), sprint (750 m · 20 km · 5 km) y estándar/olímpica (1,5 km · 40 km · 10 km); duatlón sprint (5 km · 20 km · 2,5 km) y estándar (10 km · 40 km · 5 km). También se pueden escribir **personalizadas**. Por defecto: triatlón estándar y duatlón sprint.
-- La elección se recuerda por deporte en el navegador de cada persona; todavía no se guarda en la prueba. Si una prueba tiene otras distancias, hay que elegirlas.
+- Distancias predefinidas: triatlón súper sprint (300 m · 8 km · 2,5 km), sprint (750 m · 20 km · 5 km) y estándar/olímpica (1,5 km · 40 km · 10 km); duatlón sprint (5 km · 20 km · 2,5 km) y estándar (10 km · 40 km · 5 km). También se pueden escribir **personalizadas**. Si nadie las ha elegido para esa prueba, **se deducen de sus tiempos medios**: se elige el formato cuyos ritmos medios se parecen más a los típicos (así un campeonato con natación de 9:53 y bici de 28:39 sale como sprint, no como estándar). Si con las distancias elegidas los ritmos medios no son realistas (natación fuera de 0:50–3:20/100 m, bici fuera de 18–55 km/h o carrera fuera de 2:30–9:00/km), se muestra un aviso.
+- La elección se recuerda por prueba en el navegador de cada persona; todavía no se guarda en la prueba. Si una prueba tiene otras distancias, hay que elegirlas.
 - Los cálculos están en `client/js/ritmos.js` (sin DOM, con pruebas).
 
 ## Cómo se calcula

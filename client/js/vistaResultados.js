@@ -5,6 +5,7 @@ import { filtrarClasificacion, esMejorSegmento } from "./filtrosResultados.js";
 import { textoElo } from "./elo.js";
 import { crearPestanas } from "./pestanas.js";
 import { panelResumen, panelSplits, panelPrediccion, crearAjusteDistancias } from "./vistaCarrera.js";
+import { resumenCarrera } from "./segmentos.js";
 import { el, enlace, tabla, formatearTiempo, formatearFecha } from "./dom.js";
 
 const DEPORTES = { duatlon: "Duatlón", triatlon: "Triatlón" };
@@ -123,7 +124,7 @@ export function mostrarDetallePrueba({ prueba, clasificacion, mejoresSegmentos }
 
   const datos = { prueba, clasificacion };
   let pestanas;
-  const ajuste = crearAjusteDistancias(prueba.deporte, () => pestanas?.refrescar());
+  const ajuste = crearAjusteDistancias(prueba, resumenCarrera(clasificacion).medias, () => pestanas?.refrescar());
   const opciones = { alElegirAtleta, metros: ajuste.metros };
   const clasificacionNodos = () => [
     el("h4", "Mejor tiempo de cada segmento"),
