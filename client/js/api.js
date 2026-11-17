@@ -87,4 +87,5 @@ export async function subirListaSalida(id, archivo, sexo) {
   if (!respuesta.ok) throw new ErrorApi(respuesta.status, datos?.codigo, datos?.error || `Error inesperado del servidor (${respuesta.status})`);
   return datos;
 }
+export const preparacionDe = (id) => peticion("GET", `/convocatorias/${encodeURIComponent(id)}/preparacion`);
 export const asistenciaDe = (id) => peticion("GET", `/convocatorias/${encodeURIComponent(id)}/asistencia`);

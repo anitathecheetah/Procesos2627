@@ -29,7 +29,7 @@ const manejar = (fn) => async (req, res, next) => {
   }
 };
 
-export function crearRutasApi({ usuarios, importacion, sanciones, consulta, ranking, prediccion, convocatorias, sesiones, secreto, produccion = false }) {
+export function crearRutasApi({ usuarios, importacion, sanciones, consulta, ranking, prediccion, convocatorias, preparacion, sesiones, secreto, produccion = false }) {
   const router = Router();
   const opcionesCookie = { maxAgeSegundos: Math.floor(sesiones.duracionMs / 1000), seguro: produccion };
 
@@ -136,6 +136,9 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
   }));
   router.get("/convocatorias/:id/salida", manejar(async (req, res) => {
     res.status(200).json(await convocatorias.listaSalida(req.params.id));
+  }));
+  router.get("/convocatorias/:id/preparacion", manejar(async (req, res) => {
+    res.status(200).json(await preparacion.preparacion(req.params.id));
   }));
   router.get("/convocatorias/:id/asistencia", exigirSesion, manejar(async (req, res) => {
     res.status(200).json(await convocatorias.asistencia(req.usuarioId, req.params.id));

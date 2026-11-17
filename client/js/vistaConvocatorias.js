@@ -1,5 +1,6 @@
 // Presentación de las próximas carreras: solo construye el DOM. No hace peticiones (eso es api.js).
 import { el, tabla, formatearFecha } from "./dom.js";
+import { textoDias, proximaCarreraApuntada, textoTiempo } from "./cuentaAtras.js";
 
 const DEPORTES = { duatlon: "Duatlón", triatlon: "Triatlón" };
 const ESTADOS = { abierta: "Abierta", cerrada: "Con lista de salida" };
@@ -18,6 +19,12 @@ export function mostrarConvocatorias(carreras, usuario, acciones) {
     return;
   }
   const esAdmin = usuario?.rol === "admin";
+  const proxima = usuario ? proximaCarreraApuntada(carreras) : null;
+  document.getElementById("proxima-carrera").replaceChildren(...(proxima ? [
+    el("strong", `Tu próxima carrera: ${proxima.nombre}`),
+    el("span", `${textoDias(proxima.diasRestantes)} · ${formatearFecha(proxima.fecha)}`),
+    boton("Preparar carrera", () => acciones.alPreparar(proxima), ""),
+  ] : []));
   lista.replaceChildren(...carreras.map((c) => {
     const abierta = c.estado === "abierta";
     const li = el("li", undefined, { className: "convocatoria" });
@@ -25,6 +32,7 @@ export function mostrarConvocatorias(carreras, usuario, acciones) {
     datos.append(
       el("strong", c.nombre),
       el("span", `${formatearFecha(c.fecha)} · ${DEPORTES[c.deporte] ?? c.deporte}${c.lugar ? ` · ${c.lugar}` : ""}`, { className: "suave" }),
+      el("span", textoDias(c.diasRestantes), { className: "cuenta-atras" }),
       el("span", `${c.apuntados} ${c.apuntados === 1 ? "apuntado" : "apuntados"} · ${ESTADOS[c.estado] ?? c.estado}${abierta ? "" : ` (${c.participantes} participantes)`}`, { className: "suave" }),
     );
     const botones = el("div", undefined, { className: "convocatoria-botones" });
@@ -36,6 +44,7 @@ export function mostrarConvocatorias(carreras, usuario, acciones) {
       botones.append(el("span", "Inicia sesión para apuntarte", { className: "suave pequeno" }));
     }
     if (c.apuntado && abierta) botones.append(el("span", "✓ Vas a ir", { className: "apuntado" }));
+    if (c.diasRestantes >= 0) botones.append(boton("Preparar carrera", () => acciones.alPreparar(c)));
     if (!abierta) botones.append(boton("Ver lista de salida", () => acciones.alVerLista(c)));
     if (esAdmin) {
       botones.append(boton("Ver apuntados", () => acciones.alVerApuntados(c)));
@@ -108,4 +117,25 @@ export function mostrarAvisoConvocatorias(texto, correcto = false) {
   const zona = document.getElementById("aviso-convocatorias");
   zona.textContent = texto;
   zona.dataset.correcto = String(correcto);
+}
+
+// Cuenta atrás, previsión del tiempo y material recomendado de una carrera.
+export function mostrarPreparacion(p) {
+  const nodos = [el("h3", `Preparar ${p.carrera.nombre}`), el("p", `${textoDias(p.diasRestantes)} · ${formatearFecha(p.carrera.fecha)}${p.carrera.lugar ? ` · ${p.carrera.lugar}` : ""}`, { className: "cuenta-atras" })];
+  nodos.push(p.tiempo
+    ? el("p", `Previsión: ${textoTiempo(p.tiempo)} (fuente: ${p.tiempo.fuente})`, { className: "prevision" })
+    : el("p", p.sinPrevision ?? "", { className: "suave" }));
+  if (p.recomendaciones.length) {
+    const ul = el("ul", undefined, { className: "lista" });
+    p.recomendaciones.forEach((a) => {
+      const li = el("li", undefined, { className: "recomendacion" });
+      li.append(el("strong", a.nombre), el("span", a.motivo, { className: "suave" }));
+      const enlace = el("a", "Buscar y comparar reseñas", { href: a.enlace, target: "_blank", rel: "noopener noreferrer" });
+      li.append(enlace);
+      ul.append(li);
+    });
+    nodos.push(el("h4", "Material recomendado"), ul,
+      el("p", "Son sugerencias generales según el tiempo; los enlaces abren una búsqueda para que compares productos y reseñas actuales.", { className: "suave pequeno" }));
+  }
+  document.getElementById("detalle-convocatoria").replaceChildren(...nodos);
 }

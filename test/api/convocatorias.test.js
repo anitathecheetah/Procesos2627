@@ -110,3 +110,25 @@ test("ERROR: sin sesión 401, usuario normal 403, datos inválidos 400 y carrera
     assert.equal((await llamar(undefined, "GET", "/convocatorias/no-existe/salida")).status, 404);
   } finally { cerrar(); }
 });
+
+test("preparación: días restantes en el listado y previsión + material en /preparacion", async () => {
+  const { hoyEnEspana } = await import("../../server/logic/preparacion.js");
+  const repositorio = crearRepositorioMemoria();
+  const hash = await crearCifradorBcrypt().cifrar("secreta123");
+  await repositorio.crear({ id: "admin", nombre: "Admin", email: "admin@correo.es", rol: "admin", estado: "activo", hash });
+  const meteo = { prevision: async () => ({ lugar: "Águilas", tMin: 4, tMax: 13, probLluvia: 10, vientoKmh: 12, descripcion: "Nublado", fuente: "Open-Meteo" }) };
+  const servidor = await new Promise((r) => { const s = crearApp({ repositorio, meteo, secreto: "secreto-de-prueba" }).listen(0, () => r(s)); });
+  const url = `http://127.0.0.1:${servidor.address().port}/api`;
+  try {
+    const cookie = (await fetch(`${url}/sesion`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "admin@correo.es", password: "secreta123" }) })).headers.getSetCookie()[0].split(";")[0];
+    const en3 = new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 10);
+    const { id } = await (await fetch(`${url}/convocatorias`, { method: "POST", headers: { Cookie: cookie, "Content-Type": "application/json" }, body: JSON.stringify({ ...DATOS, fecha: en3 }) })).json();
+    const lista = await (await fetch(`${url}/convocatorias`)).json();
+    assert.ok([2, 3, 4].includes(lista[0].diasRestantes), `días: ${lista[0].diasRestantes}`);
+    const p = await (await fetch(`${url}/convocatorias/${id}/preparacion`)).json();
+    assert.equal(p.tiempo.tMax, 13);
+    assert.ok(p.recomendaciones.some((a) => /térmica/i.test(a.nombre)));
+    assert.ok(hoyEnEspana());
+    assert.equal((await fetch(`${url}/convocatorias/nada/preparacion`)).status, 404);
+  } finally { servidor.close(); servidor.closeAllConnections(); }
+});

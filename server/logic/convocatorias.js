@@ -9,6 +9,7 @@ import { DEPORTES } from "./catalogos.js";
 import { leerListaSalida } from "./excelSalida.js";
 import { esPosibleMenor } from "./importacion.js";
 import { normalizarNombre } from "./normalizacion.js";
+import { diasHasta } from "./preparacion.js";
 
 export const ESTADOS_CONVOCATORIA = Object.freeze({ ABIERTA: "abierta", CERRADA: "cerrada" }); // cerrada = con lista de salida oficial
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
@@ -104,7 +105,7 @@ export function crearServicioConvocatorias({ repos, usuarios, dominio, log = { i
       const filas = await Promise.all(todas.map(async ({ creadaPor: _c, ...c }) => {
         const inscritos = await repos.inscripciones.listar({ convocatoriaId: c.id });
         const enLista = (await repos.salida.listar({ convocatoriaId: c.id })).length;
-        return { ...c, apuntados: inscritos.length, participantes: enLista, ...(usuarioId ? { apuntado: inscritos.some((i) => i.usuarioId === usuarioId) } : {}) };
+        return { ...c, diasRestantes: diasHasta(c.fecha), apuntados: inscritos.length, participantes: enLista, ...(usuarioId ? { apuntado: inscritos.some((i) => i.usuarioId === usuarioId) } : {}) };
       }));
       const abiertas = (c) => c.estado === ESTADOS_CONVOCATORIA.ABIERTA;
       return filas.sort((a, b) => (abiertas(b) - abiertas(a)) || a.fecha.localeCompare(b.fecha) || a.nombre.localeCompare(b.nombre, "es"));

@@ -1,11 +1,11 @@
 // Conecta la vista de las próximas carreras (vistaConvocatorias.js) con el cliente de API (api.js).
 import {
   listarConvocatorias, crearConvocatoria, eliminarConvocatoria, apuntarse, desapuntarse,
-  apuntadosDe, subirListaSalida, listaSalidaDe, asistenciaDe,
+  apuntadosDe, subirListaSalida, listaSalidaDe, asistenciaDe, preparacionDe,
 } from "./api.js";
 import {
   mostrarConvocatorias, mostrarFormularioAdmin, limpiarDetalle, mostrarApuntados,
-  mostrarFormularioLista, mostrarLista, mostrarAsistencia, mostrarAvisoConvocatorias,
+  mostrarFormularioLista, mostrarLista, mostrarAsistencia, mostrarAvisoConvocatorias, mostrarPreparacion,
 } from "./vistaConvocatorias.js";
 
 let usuario = null;
@@ -25,6 +25,7 @@ async function cargar() {
 }
 
 const acciones = {
+  alPreparar: (c) => intentar(async () => mostrarPreparacion(await preparacionDe(c.id))),
   alApuntarse: (c) => intentar(async () => { await apuntarse(c.id); await cargar(); }),
   alDesapuntarse: (c) => intentar(async () => { await desapuntarse(c.id); await cargar(); }),
   alVerApuntados: (c) => intentar(async () => mostrarApuntados(c, await apuntadosDe(c.id))),
