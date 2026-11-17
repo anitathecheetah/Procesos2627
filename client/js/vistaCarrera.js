@@ -4,27 +4,35 @@ import { NOMBRES_PARCIALES } from "./parciales.js";
 import { SEGMENTOS, construirSplits, ordenarSplits, mejoresDelSegmento, resumenCarrera, csvSplits } from "./segmentos.js";
 import { el, enlace, formatearTiempo, formatearTiempoCorto } from "./dom.js";
 import { construirPrediccion } from "./vistaPrediccion.js";
-import { DISTANCIAS, DISTANCIA_POR_DEFECTO, PERSONALIZADA, distanciasDe, textoRitmo } from "./ritmos.js";
+import { DISTANCIAS, DISTANCIA_POR_DEFECTO, PERSONALIZADA, distanciasDe, textoRitmo, ritmosRealistas, sugerirDistancias } from "./ritmos.js";
 
 const nombresDe = (prueba) => NOMBRES_PARCIALES[prueba.deporte] ?? Array.from({ length: SEGMENTOS }, (_, i) => `Segmento ${i + 1}`);
 const tarjeta = (...hijos) => { const t = el("div", undefined, { className: "mini-tarjeta" }); t.append(...hijos); return t; };
 
-function leerGuardado(deporte) {
-  try { return JSON.parse(localStorage.getItem(`ritmos:${deporte}`)) ?? {}; } catch { return {}; }
+function leerGuardado(clave) {
+  try { return JSON.parse(localStorage.getItem(clave)) ?? {}; } catch { return {}; }
 }
-function guardar(deporte, valor) {
-  try { localStorage.setItem(`ritmos:${deporte}`, JSON.stringify(valor)); } catch { /* sin almacenamiento: no se recuerda */ }
+function guardar(clave, valor) {
+  try { localStorage.setItem(clave, JSON.stringify(valor)); } catch { /* sin almacenamiento: no se recuerda */ }
 }
 
-// Selector de las distancias de la prueba, de las que salen los ritmos. Se recuerda por deporte en este navegador.
-// Devuelve { nodo, metros }: `metros()` da las distancias elegidas ([nat o c1, bici, carrera] en metros) o null.
-export function crearAjusteDistancias(deporte, alCambiar) {
+// Selector de las distancias de la prueba, de las que salen los ritmos.
+// Si nadie las ha elegido para ESTA prueba, se deducen de sus tiempos medios (el formato cuyos ritmos encajan);
+// la elección se recuerda por prueba en este navegador. Si con las distancias elegidas los ritmos medios no son
+// creíbles, se avisa. medias: tiempo medio de cada segmento (resumenCarrera). Devuelve { nodo, metros }:
+// `metros()` da las distancias elegidas ([nat o c1, bici, carrera] en metros) o null.
+export function crearAjusteDistancias(prueba, medias, alCambiar) {
+  const deporte = prueba.deporte;
   const presets = DISTANCIAS[deporte];
   if (!presets) return { nodo: null, metros: () => null };
-  const guardado = leerGuardado(deporte);
+  const almacen = `ritmos:${prueba.id}`;
+  const guardado = leerGuardado(almacen);
+  const sugerida = sugerirDistancias(deporte, medias) ?? DISTANCIA_POR_DEFECTO[deporte];
+  const elegidaAntes = guardado.clave === PERSONALIZADA || Boolean(presets[guardado.clave]);
   const estado = {
-    clave: guardado.clave === PERSONALIZADA || presets[guardado.clave] ? guardado.clave : DISTANCIA_POR_DEFECTO[deporte],
-    personalizadas: Array.isArray(guardado.personalizadas) ? guardado.personalizadas : presets[DISTANCIA_POR_DEFECTO[deporte]].metros,
+    clave: elegidaAntes ? guardado.clave : sugerida,
+    personalizadas: Array.isArray(guardado.personalizadas) ? guardado.personalizadas : presets[sugerida].metros,
+    deducida: !elegidaAntes,
   };
   const triatlon = deporte === "triatlon";
   const campos = [[triatlon ? "Natación (m)" : "Carrera 1 (km)", triatlon ? 1 : 1000], ["Bici (km)", 1000], [triatlon ? "Carrera (km)" : "Carrera 2 (km)", 1000]];
@@ -35,6 +43,14 @@ export function crearAjusteDistancias(deporte, alCambiar) {
   selector.value = estado.clave;
   const etiqueta = el("label", "Distancias de la prueba (para calcular los ritmos)");
   etiqueta.append(selector);
+
+  const nota = el("p", undefined, { className: "suave pequeno" });
+  const aviso = el("p", undefined, { className: "aviso-ritmos", role: "alert" });
+  const actualizarNotas = () => {
+    nota.textContent = estado.deducida ? "Distancias deducidas de los tiempos de esta prueba: cámbialas si no son las correctas." : "";
+    aviso.textContent = ritmosRealistas(deporte, medias, distanciasDe(deporte, estado.clave, estado.personalizadas))
+      ? "" : "Con estas distancias los ritmos medios no son realistas: revisa las distancias de la prueba.";
+  };
 
   const personalizadas = el("div", undefined, { className: "filtros" });
   const entradas = campos.map(([texto, factor], i) => {
@@ -47,11 +63,12 @@ export function crearAjusteDistancias(deporte, alCambiar) {
   });
   personalizadas.hidden = estado.clave !== PERSONALIZADA;
 
-  const cambiar = () => { guardar(deporte, estado); alCambiar(); };
+  const cambiar = () => { estado.deducida = false; guardar(almacen, { clave: estado.clave, personalizadas: estado.personalizadas }); actualizarNotas(); alCambiar(); };
   selector.addEventListener("change", () => { estado.clave = selector.value; personalizadas.hidden = estado.clave !== PERSONALIZADA; cambiar(); });
+  actualizarNotas();
 
   const nodo = el("div", undefined, { className: "ajuste-distancias" });
-  nodo.append(etiqueta, personalizadas);
+  nodo.append(etiqueta, personalizadas, nota, aviso);
   return { nodo, metros: () => distanciasDe(deporte, estado.clave, estado.personalizadas) };
 }
 

@@ -78,6 +78,8 @@ button.enlace, td button.enlace { padding: 0; background: none; border: 0; color
 
 /* Ritmos y distancias */
 .ajuste-distancias { margin: .5rem 0 0; }
+.aviso-ritmos { margin: .25rem 0 0; font-size: .85rem; color: var(--aviso); }
+.aviso-ritmos:empty { display: none; }
 .ritmo { font-size: .75rem; color: var(--ok); font-variant-numeric: tabular-nums; }
 .fila-top .ritmo { margin-left: .25rem; }
 
