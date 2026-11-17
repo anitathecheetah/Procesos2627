@@ -1,11 +1,11 @@
 // Conecta la vista de las próximas carreras (vistaConvocatorias.js) con el cliente de API (api.js).
 import {
   listarConvocatorias, crearConvocatoria, eliminarConvocatoria, apuntarse, desapuntarse,
-  apuntadosDe, vincularListado, asistenciaDe, listarPruebas,
+  apuntadosDe, subirListaSalida, listaSalidaDe, asistenciaDe,
 } from "./api.js";
 import {
   mostrarConvocatorias, mostrarFormularioAdmin, limpiarDetalle, mostrarApuntados,
-  mostrarFormularioVincular, mostrarAsistencia, mostrarAvisoConvocatorias,
+  mostrarFormularioLista, mostrarLista, mostrarAsistencia, mostrarAvisoConvocatorias,
 } from "./vistaConvocatorias.js";
 
 let usuario = null;
@@ -21,6 +21,7 @@ async function intentar(accion) {
 
 async function cargar() {
   await intentar(async () => mostrarConvocatorias(await listarConvocatorias(), usuario, acciones));
+  document.dispatchEvent(new CustomEvent("convocatorias-cambiadas")); // la tarjeta de predicción actualiza sus listas
 }
 
 const acciones = {
@@ -28,7 +29,8 @@ const acciones = {
   alDesapuntarse: (c) => intentar(async () => { await desapuntarse(c.id); await cargar(); }),
   alVerApuntados: (c) => intentar(async () => mostrarApuntados(c, await apuntadosDe(c.id))),
   alVerAsistencia: (c) => intentar(async () => mostrarAsistencia(await asistenciaDe(c.id))),
-  alVincular: (c) => intentar(async () => mostrarFormularioVincular(c, await listarPruebas(c.deporte), alConfirmarVinculo)),
+  alVerLista: (c) => intentar(async () => mostrarLista(c, await listaSalidaDe(c.id))),
+  alSubirLista: (c) => intentar(async () => mostrarFormularioLista(c, alConfirmarSubida)),
   alEliminar: (c) => intentar(async () => {
     if (!window.confirm(`¿Eliminar «${c.nombre}» y sus inscripciones?`)) return;
     await eliminarConvocatoria(c.id);
@@ -37,8 +39,10 @@ const acciones = {
   }),
 };
 
-const alConfirmarVinculo = (c, pruebaId) => intentar(async () => {
-  mostrarAsistencia(await vincularListado(c.id, pruebaId));
+const alConfirmarSubida = (c, archivo, sexo) => intentar(async () => {
+  if (!archivo) return mostrarAvisoConvocatorias("Elige primero el archivo Excel.");
+  const r = await subirListaSalida(c.id, await archivo.arrayBuffer(), sexo);
+  mostrarAsistencia(r.asistencia, r);
   await cargar();
 });
 

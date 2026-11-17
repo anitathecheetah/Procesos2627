@@ -1,14 +1,16 @@
-// Próximas carreras (convocatorias) e inscripciones de usuarios (PBI-37 y PBI-38).
+// Próximas carreras (convocatorias), inscripciones de usuarios y lista de salida oficial (PBI-37 y PBI-38).
 // El administrador crea la carrera; cada usuario con sesión puede apuntarse o desapuntarse mientras esté
-// abierta. Cuando la federación publica el listado real y el administrador lo importa como una prueba, se
-// vincula con la carrera (pasa a «celebrada») y se compara quién de los apuntados participó de verdad.
+// abierta. Antes de la carrera la federación publica la lista de salida; el administrador la sube (Excel), la
+// carrera pasa a «cerrada» y se compara quién de los apuntados está de verdad en la lista. La predicción usa esa lista.
 // Documentada en docs/convocatorias.md.
 import { randomUUID } from "node:crypto";
 import { ErrorLogica } from "./errores.js";
-import { DEPORTES, ESTADOS_RESULTADO } from "./catalogos.js";
+import { DEPORTES } from "./catalogos.js";
+import { leerListaSalida } from "./excelSalida.js";
+import { esPosibleMenor } from "./importacion.js";
 import { normalizarNombre } from "./normalizacion.js";
 
-export const ESTADOS_CONVOCATORIA = Object.freeze({ ABIERTA: "abierta", CELEBRADA: "celebrada" });
+export const ESTADOS_CONVOCATORIA = Object.freeze({ ABIERTA: "abierta", CERRADA: "cerrada" }); // cerrada = con lista de salida oficial
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 function texto(valor, campo, { min = 0, max }) {
@@ -35,18 +37,26 @@ export function coincidenNombres(nombreUsuario, nombreAtleta) {
   return buscadas.length >= 2 && buscadas.every((p) => delAtleta.has(p));
 }
 
-export function crearServicioConvocatorias({ repos, usuarios, log = { info() {} } }) {
+export function crearServicioConvocatorias({ repos, usuarios, dominio, log = { info() {} } }) {
   async function buscar(id) {
     const c = await repos.convocatorias.buscarPorId(id);
     if (!c) throw new ErrorLogica("NO_ENCONTRADO", "La carrera no existe");
     return c;
   }
 
-  // Compara los apuntados con los participantes de la prueba vinculada.
+  // La lista de salida de una carrera con los datos del atleta y su club.
+  async function participantesDe(convocatoriaId) {
+    const filas = await repos.salida.listar({ convocatoriaId });
+    return Promise.all(filas.map(async (p) => ({
+      atleta: await repos.atletas.buscarPorId(p.atletaId),
+      club: p.clubId ? await repos.clubes.buscarPorId(p.clubId) : null,
+      dorsal: p.dorsal ?? null,
+    })));
+  }
+
+  // Compara los apuntados con la lista de salida oficial.
   async function calcularAsistencia(convocatoria) {
-    const prueba = await repos.pruebas.buscarPorId(convocatoria.pruebaId);
-    const resultados = (await repos.resultados.listar({ pruebaId: prueba.id })).filter((r) => r.estado !== ESTADOS_RESULTADO.DNS);
-    const participantes = await Promise.all(resultados.map(async (r) => ({ resultado: r, atleta: await repos.atletas.buscarPorId(r.atletaId) })));
+    const participantes = await participantesDe(convocatoria.id);
     const usados = new Set();
     const apuntados = (await repos.inscripciones.listar({ convocatoriaId: convocatoria.id }))
       .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
@@ -54,16 +64,15 @@ export function crearServicioConvocatorias({ repos, usuarios, log = { info() {} 
         const coincidencia = participantes.find((p) => !usados.has(p.atleta.id) && coincidenNombres(i.nombre, p.atleta.nombre));
         if (coincidencia) usados.add(coincidencia.atleta.id);
         return {
-          usuarioId: i.usuarioId, nombre: i.nombre, participo: Boolean(coincidencia),
-          ...(coincidencia ? { atleta: { id: coincidencia.atleta.id, nombre: coincidencia.atleta.nombre }, estado: coincidencia.resultado.estado, posicion: coincidencia.resultado.posicion } : {}),
+          usuarioId: i.usuarioId, nombre: i.nombre, enLista: Boolean(coincidencia),
+          ...(coincidencia ? { atleta: { id: coincidencia.atleta.id, nombre: coincidencia.atleta.nombre }, dorsal: coincidencia.dorsal } : {}),
         };
       });
     return {
       convocatoria: { id: convocatoria.id, nombre: convocatoria.nombre, fecha: convocatoria.fecha },
-      prueba: { id: prueba.id, nombre: prueba.nombre, fecha: prueba.fecha },
       participantes: participantes.length,
-      participaron: apuntados.filter((a) => a.participo).length,
-      noParticiparon: apuntados.filter((a) => !a.participo).length,
+      enLista: apuntados.filter((a) => a.enLista).length,
+      noEnLista: apuntados.filter((a) => !a.enLista).length,
       sinApuntarse: participantes.length - usados.size,
       apuntados,
     };
@@ -88,16 +97,17 @@ export function crearServicioConvocatorias({ repos, usuarios, log = { info() {} 
       return { ...c, apuntados: 0 };
     },
 
-    // Público. Las abiertas primero (la más próxima arriba), luego las celebradas (la más reciente arriba).
+    // Público. Las abiertas primero (la más próxima arriba), luego las cerradas (la más próxima arriba también).
     // Con usuarioId añade `apuntado` (si esa persona está apuntada). Solo cuenta apuntados, no los nombra.
     async listar({ usuarioId } = {}) {
       const todas = await repos.convocatorias.listar();
       const filas = await Promise.all(todas.map(async ({ creadaPor: _c, ...c }) => {
         const inscritos = await repos.inscripciones.listar({ convocatoriaId: c.id });
-        return { ...c, apuntados: inscritos.length, ...(usuarioId ? { apuntado: inscritos.some((i) => i.usuarioId === usuarioId) } : {}) };
+        const enLista = (await repos.salida.listar({ convocatoriaId: c.id })).length;
+        return { ...c, apuntados: inscritos.length, participantes: enLista, ...(usuarioId ? { apuntado: inscritos.some((i) => i.usuarioId === usuarioId) } : {}) };
       }));
       const abiertas = (c) => c.estado === ESTADOS_CONVOCATORIA.ABIERTA;
-      return filas.sort((a, b) => (abiertas(b) - abiertas(a)) || (abiertas(a) ? a.fecha.localeCompare(b.fecha) : b.fecha.localeCompare(a.fecha)) || a.nombre.localeCompare(b.nombre, "es"));
+      return filas.sort((a, b) => (abiertas(b) - abiertas(a)) || a.fecha.localeCompare(b.fecha) || a.nombre.localeCompare(b.nombre, "es"));
     },
 
     // Borra la carrera y sus inscripciones (solo administradores).
@@ -105,6 +115,7 @@ export function crearServicioConvocatorias({ repos, usuarios, log = { info() {} 
       await usuarios.exigirAdministrador(solicitanteId);
       await buscar(id);
       await repos.inscripciones.eliminarPor({ convocatoriaId: id });
+      await repos.salida.eliminarPor({ convocatoriaId: id });
       await repos.convocatorias.eliminar(id);
       log.info("Carrera eliminada", { id });
     },
@@ -114,7 +125,7 @@ export function crearServicioConvocatorias({ repos, usuarios, log = { info() {} 
       if (!usuarioId) throw new ErrorLogica("NO_AUTENTICADO", "Inicia sesión para apuntarte");
       const usuario = await usuarios.obtener(usuarioId);
       const c = await buscar(id);
-      if (c.estado !== ESTADOS_CONVOCATORIA.ABIERTA) throw new ErrorLogica("DATOS_INVALIDOS", "La carrera ya no admite inscripciones");
+      if (c.estado !== ESTADOS_CONVOCATORIA.ABIERTA) throw new ErrorLogica("DATOS_INVALIDOS", "La carrera ya tiene lista de salida oficial y no admite inscripciones");
       if (!(await repos.inscripciones.buscarUno({ convocatoriaId: id, usuarioId }))) {
         await repos.inscripciones.crear({ id: randomUUID(), convocatoriaId: id, usuarioId, nombre: usuario.nombre });
       }
@@ -124,7 +135,7 @@ export function crearServicioConvocatorias({ repos, usuarios, log = { info() {} 
     async desapuntarse(usuarioId, id) {
       if (!usuarioId) throw new ErrorLogica("NO_AUTENTICADO", "Inicia sesión para desapuntarte");
       const c = await buscar(id);
-      if (c.estado !== ESTADOS_CONVOCATORIA.ABIERTA) throw new ErrorLogica("DATOS_INVALIDOS", "La carrera ya no admite cambios de inscripción");
+      if (c.estado !== ESTADOS_CONVOCATORIA.ABIERTA) throw new ErrorLogica("DATOS_INVALIDOS", "La carrera ya tiene lista de salida oficial y no admite cambios de inscripción");
       await repos.inscripciones.eliminarPor({ convocatoriaId: id, usuarioId });
     },
 
@@ -137,25 +148,48 @@ export function crearServicioConvocatorias({ repos, usuarios, log = { info() {} 
         .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
     },
 
-    // Vincula la carrera con la prueba importada del listado real (solo administradores). La carrera pasa a
-    // «celebrada» y devuelve la asistencia. Se puede volver a vincular con otra prueba si se importó mal.
-    async vincularListado(solicitanteId, id, pruebaId) {
+    // Sube la lista de salida oficial (Excel de la federación; solo administradores). Sustituye a la anterior si la
+    // había. La carrera pasa a «cerrada». Como al importar resultados, por defecto no entran posibles menores de
+    // edad (se descartan antes de guardar nada). `sexo` (M o F) se aplica a todos los atletas nuevos del archivo.
+    async cargarListaSalida(solicitanteId, id, buffer, { sexo, soloMayores = true } = {}) {
       await usuarios.exigirAdministrador(solicitanteId);
       const c = await buscar(id);
-      const prueba = typeof pruebaId === "string" ? await repos.pruebas.buscarPorId(pruebaId) : null;
-      if (!prueba) throw new ErrorLogica("NO_ENCONTRADO", "La prueba no existe: importa antes el listado real");
-      if (prueba.deporte !== c.deporte) throw new ErrorLogica("DATOS_INVALIDOS", `La prueba es de ${prueba.deporte} y la carrera de ${c.deporte}`);
-      const actualizada = { ...c, estado: ESTADOS_CONVOCATORIA.CELEBRADA, pruebaId: prueba.id };
-      await repos.convocatorias.actualizar(actualizada);
-      log.info("Carrera vinculada al listado real", { id, pruebaId: prueba.id });
-      return calcularAsistencia(actualizada);
+      if (!Buffer.isBuffer(buffer) || buffer.length === 0) throw new ErrorLogica("DATOS_INVALIDOS", "Falta el archivo Excel");
+      if (sexo && !["M", "F"].includes(sexo)) throw new ErrorLogica("DATOS_INVALIDOS", "El sexo debe ser M o F");
+      const { participantes, descartadas } = await leerListaSalida(buffer);
+      const permitidos = soloMayores === false ? participantes : participantes.filter((p) => !esPosibleMenor(p.anioNacimiento, c.fecha));
+      const menoresExcluidos = participantes.length - permitidos.length;
+      if (!permitidos.length) throw new ErrorLogica("DATOS_INVALIDOS", "El Excel no contiene participantes válidos (o solo posibles menores de edad)");
+
+      const vistos = new Set();
+      const nuevos = [];
+      for (const p of permitidos) {
+        const atleta = await dominio.obtenerOCrearAtleta({ nombre: p.nombre, anioNacimiento: p.anioNacimiento, sexo: sexo || undefined });
+        if (vistos.has(atleta.id)) { descartadas.push({ fila: null, motivo: `atleta repetido en el archivo: ${p.nombre}` }); continue; }
+        vistos.add(atleta.id);
+        const club = p.club ? await dominio.obtenerOCrearClub(p.club) : null;
+        nuevos.push({ id: randomUUID(), convocatoriaId: id, atletaId: atleta.id, ...(club ? { clubId: club.id } : {}), ...(p.dorsal ? { dorsal: p.dorsal } : {}) });
+      }
+      await repos.salida.eliminarPor({ convocatoriaId: id });
+      await repos.salida.crearVarios(nuevos);
+      await repos.convocatorias.actualizar({ ...c, estado: ESTADOS_CONVOCATORIA.CERRADA });
+      log.info("Lista de salida cargada", { id, participantes: nuevos.length, menoresExcluidos });
+      return { participantes: nuevos.length, menoresExcluidos, descartadas, asistencia: await calcularAsistencia(c) };
     },
 
-    // Asistencia de una carrera ya vinculada (solo administradores).
+    // Lista de salida oficial (pública, como la publica la federación): atleta, club y dorsal.
+    async listaSalida(id) {
+      await buscar(id);
+      return (await participantesDe(id))
+        .map(({ atleta, club, dorsal }) => ({ atleta: { id: atleta.id, nombre: atleta.nombre }, club: club ? { id: club.id, nombre: club.nombre } : null, dorsal }))
+        .sort((a, b) => a.atleta.nombre.localeCompare(b.atleta.nombre, "es"));
+    },
+
+    // Quién de los apuntados está en la lista de salida oficial (solo administradores).
     async asistencia(solicitanteId, id) {
       await usuarios.exigirAdministrador(solicitanteId);
       const c = await buscar(id);
-      if (!c.pruebaId) throw new ErrorLogica("DATOS_INVALIDOS", "Todavía no hay listado real vinculado a esta carrera");
+      if (c.estado !== ESTADOS_CONVOCATORIA.CERRADA) throw new ErrorLogica("DATOS_INVALIDOS", "Todavía no has subido la lista de salida de esta carrera");
       return calcularAsistencia(c);
     },
   };

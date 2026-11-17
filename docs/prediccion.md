@@ -13,12 +13,13 @@ El generador de números aleatorios usa una semilla fija: con los mismos datos, 
 
 ## Lista de salida
 
-La lista oficial de Águilas 2027 todavía no existe, así que se puede usar:
+Se puede usar:
 
+- **La lista de salida oficial de una carrera futura** (la sube el administrador, ver [convocatorias.md](convocatorias.md)): se predice a **todos** los que van a competir. Quien no tiene Elo en el deporte parte de 1500 y sale marcado (`sinHistorial`). Es la opción recomendada y la que viene elegida si existe.
 - **Una prueba anterior** (p. ej. Águilas 2026): **todos** sus participantes (salvo los que no salieron), sin recortar la lista, con su Elo actual. Quien tiene ya otra prueba posterior tiene el Elo actualizado.
 - **Los mejores del ranking** (por defecto 100, hasta 300), filtrando por sexo. Es solo una aproximación: no sabe quién va a competir de verdad.
 
-Lo ideal es predecir exactamente a quien va a competir: ver el PBI-39 (usar los apuntados a la carrera o la lista de salida oficial).
+Mientras la federación no publique la lista de salida, la edición anterior es la mejor aproximación.
 
 ## Comparar con el resultado real («predicción vs resultado»)
 
@@ -30,7 +31,8 @@ Con una prueba ya disputada y `retrospectiva=true`, la predicción usa el Elo qu
 
 | Parámetro | Significado |
 |---|---|
-| `base` | id de la prueba cuyos participantes forman la lista de salida |
+| `convocatoria` | id de una carrera futura con lista de salida oficial |
+| `base` | id de la prueba cuyos participantes forman la lista de salida (no se combina con `convocatoria`) |
 | `sexo` | `M` o `F` (solo sin `base`) |
 | `maximo` | máximo de atletas, solo sin `base` (2–300, por defecto 100) |
 | `simulaciones` | 100–20000 (por defecto 5000) |

@@ -65,7 +65,7 @@ export function crearApp({
     consulta: crearServicioConsulta({ repos: dominioRepos }),
     ranking: crearServicioRanking({ repos: dominioRepos, usuarios, log }),
     prediccion: crearServicioPrediccion({ repos: dominioRepos }),
-    convocatorias: crearServicioConvocatorias({ repos: dominioRepos, usuarios, log }),
+    convocatorias: crearServicioConvocatorias({ repos: dominioRepos, usuarios, dominio, log }),
     sesiones: crearServicioSesiones(repositorioSesiones),
     secreto,
     produccion: process.env.NODE_ENV === "production",

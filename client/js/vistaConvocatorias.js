@@ -2,7 +2,7 @@
 import { el, tabla, formatearFecha } from "./dom.js";
 
 const DEPORTES = { duatlon: "Duatlón", triatlon: "Triatlón" };
-const ESTADOS = { abierta: "Abierta", celebrada: "Celebrada" };
+const ESTADOS = { abierta: "Abierta", cerrada: "Con lista de salida" };
 
 function boton(texto, alPulsar, clase = "secundario") {
   const b = el("button", texto, { type: "button", className: clase });
@@ -10,7 +10,7 @@ function boton(texto, alPulsar, clase = "secundario") {
   return b;
 }
 
-// usuario: persona con sesión o null. acciones: { alApuntarse, alDesapuntarse, alVerApuntados, alVincular, alVerAsistencia, alEliminar }.
+// usuario: persona con sesión o null. acciones: { alApuntarse, alDesapuntarse, alVerLista, alVerApuntados, alSubirLista, alVerAsistencia, alEliminar }.
 export function mostrarConvocatorias(carreras, usuario, acciones) {
   const lista = document.getElementById("lista-convocatorias");
   if (!carreras.length) {
@@ -25,7 +25,7 @@ export function mostrarConvocatorias(carreras, usuario, acciones) {
     datos.append(
       el("strong", c.nombre),
       el("span", `${formatearFecha(c.fecha)} · ${DEPORTES[c.deporte] ?? c.deporte}${c.lugar ? ` · ${c.lugar}` : ""}`, { className: "suave" }),
-      el("span", `${c.apuntados} ${c.apuntados === 1 ? "apuntado" : "apuntados"} · ${ESTADOS[c.estado] ?? c.estado}`, { className: "suave" }),
+      el("span", `${c.apuntados} ${c.apuntados === 1 ? "apuntado" : "apuntados"} · ${ESTADOS[c.estado] ?? c.estado}${abierta ? "" : ` (${c.participantes} participantes)`}`, { className: "suave" }),
     );
     const botones = el("div", undefined, { className: "convocatoria-botones" });
     if (abierta && usuario) {
@@ -36,9 +36,10 @@ export function mostrarConvocatorias(carreras, usuario, acciones) {
       botones.append(el("span", "Inicia sesión para apuntarte", { className: "suave pequeno" }));
     }
     if (c.apuntado && abierta) botones.append(el("span", "✓ Vas a ir", { className: "apuntado" }));
+    if (!abierta) botones.append(boton("Ver lista de salida", () => acciones.alVerLista(c)));
     if (esAdmin) {
       botones.append(boton("Ver apuntados", () => acciones.alVerApuntados(c)));
-      botones.append(boton(abierta ? "Vincular listado real" : "Cambiar listado real", () => acciones.alVincular(c)));
+      botones.append(boton(abierta ? "Subir lista de salida" : "Cambiar lista de salida", () => acciones.alSubirLista(c)));
       if (!abierta) botones.append(boton("Ver asistencia", () => acciones.alVerAsistencia(c)));
       botones.append(boton("Eliminar", () => acciones.alEliminar(c), "peligro"));
     }
@@ -61,38 +62,46 @@ export function mostrarApuntados(carrera, apuntados) {
   );
 }
 
-// pruebas: pruebas importadas del mismo deporte (más recientes primero).
-export function mostrarFormularioVincular(carrera, pruebas, alVincular) {
-  const zona = document.getElementById("detalle-convocatoria");
-  if (!pruebas.length) {
-    zona.replaceChildren(el("h3", `Listado real de ${carrera.nombre}`), el("p", `Primero importa el listado real de la federación como una prueba de ${DEPORTES[carrera.deporte] ?? carrera.deporte}.`, { className: "vacio" }));
-    return;
-  }
-  const selector = el("select");
-  pruebas.forEach((p) => selector.append(el("option", `${p.nombre} (${formatearFecha(p.fecha)})`, { value: p.id })));
-  const etiqueta = el("label", "Prueba importada con el listado real");
-  etiqueta.append(selector);
-  zona.replaceChildren(
-    el("h3", `Listado real de ${carrera.nombre}`),
-    el("p", "Al vincularlo, la carrera pasa a «celebrada», deja de admitir inscripciones y se compara quién de los apuntados participó.", { className: "suave" }),
-    etiqueta,
-    boton("Vincular", () => alVincular(carrera, selector.value), ""),
+// Formulario del administrador para subir el Excel de la lista de salida que publica la federación.
+export function mostrarFormularioLista(carrera, alSubir) {
+  const archivo = el("input", undefined, { type: "file", accept: ".xlsx" });
+  const etiquetaArchivo = el("label", "Excel de la lista de salida (.xlsx)");
+  etiquetaArchivo.append(archivo);
+  const sexo = el("select");
+  [["", "Mixta / sin indicar"], ["M", "Masculina"], ["F", "Femenina"]].forEach(([v, t]) => sexo.append(el("option", t, { value: v })));
+  const etiquetaSexo = el("label", "Categoría de esta lista");
+  etiquetaSexo.append(sexo);
+  document.getElementById("detalle-convocatoria").replaceChildren(
+    el("h3", `Lista de salida de ${carrera.nombre}`),
+    el("p", "Columnas: NOMBRE y NACIMIENTO obligatorias; CLUB y DORSAL opcionales. Al subirla, la carrera se cierra a nuevas inscripciones y la predicción usará esta lista. Los posibles menores de edad no se guardan. Se puede volver a subir para sustituirla.", { className: "suave" }),
+    etiquetaArchivo,
+    etiquetaSexo,
+    boton("Subir lista", () => alSubir(carrera, archivo.files[0], sexo.value), ""),
   );
 }
 
-export function mostrarAsistencia(a) {
-  const filas = a.apuntados.map((p) => [
-    p.nombre,
-    p.participo ? "Sí" : "No",
-    p.atleta ? p.atleta.nombre : "—",
-    p.participo ? (p.posicion ?? p.estado.toUpperCase()) : "",
-  ]);
+export function mostrarLista(carrera, lista) {
   document.getElementById("detalle-convocatoria").replaceChildren(
-    el("h3", `Asistencia a ${a.convocatoria.nombre}`),
-    el("p", `Listado real: ${a.prueba.nombre} (${formatearFecha(a.prueba.fecha)}) · ${a.participantes} participantes · ${a.participaron} de los apuntados participaron · ${a.noParticiparon} no · ${a.sinApuntarse} participantes no se habían apuntado`, { className: "suave" }),
-    a.apuntados.length ? tabla(["Apuntado", "Participó", "Atleta del listado", "Puesto"], filas) : el("p", "Nadie se había apuntado.", { className: "vacio" }),
+    el("h3", `Lista de salida de ${carrera.nombre}`),
+    lista.length ? tabla(["Dorsal", "Atleta", "Club"], lista.map((p) => [p.dorsal ?? "", p.atleta.nombre, p.club?.nombre ?? ""])) : el("p", "La lista está vacía.", { className: "vacio" }),
+  );
+}
+
+export function mostrarAsistencia(a, resumenSubida) {
+  const filas = a.apuntados.map((p) => [p.nombre, p.enLista ? "Sí" : "No", p.atleta ? p.atleta.nombre : "—", p.dorsal ?? ""]);
+  const nodos = [el("h3", `Apuntados frente a la lista de salida de ${a.convocatoria.nombre}`)];
+  if (resumenSubida) {
+    const extra = [];
+    if (resumenSubida.menoresExcluidos) extra.push(`${resumenSubida.menoresExcluidos} posibles menores excluidos`);
+    if (resumenSubida.descartadas.length) extra.push(`${resumenSubida.descartadas.length} filas descartadas`);
+    nodos.push(el("p", `Lista subida: ${resumenSubida.participantes} participantes${extra.length ? ` (${extra.join(", ")})` : ""}.`, { className: "apuntado" }));
+  }
+  nodos.push(
+    el("p", `${a.participantes} en la lista · ${a.enLista} de los apuntados están en ella · ${a.noEnLista} no · ${a.sinApuntarse} participantes no se habían apuntado`, { className: "suave" }),
+    a.apuntados.length ? tabla(["Apuntado", "En la lista", "Atleta de la lista", "Dorsal"], filas) : el("p", "Nadie se había apuntado.", { className: "vacio" }),
     el("p", "La coincidencia se hace por nombre: las palabras del nombre del usuario deben aparecer en el del atleta. Revisa a mano los «No».", { className: "suave pequeno" }),
   );
+  document.getElementById("detalle-convocatoria").replaceChildren(...nodos);
 }
 
 export function mostrarAvisoConvocatorias(texto, correcto = false) {

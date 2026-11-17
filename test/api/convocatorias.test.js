@@ -1,4 +1,4 @@
-// Pruebas HTTP de las próximas carreras e inscripciones (PBI-37/38).
+// Pruebas HTTP de las próximas carreras, inscripciones y lista de salida (PBI-37/38).
 import test from "node:test";
 import assert from "node:assert/strict";
 import { crearApp } from "../../server/app.js";
@@ -48,25 +48,47 @@ test("el admin crea, cualquiera lista, un usuario se apunta y el admin ve quién
   } finally { cerrar(); }
 });
 
-test("vincular el listado real y consultar la asistencia", async () => {
+test("el admin sube la lista de salida: cierra la carrera, es pública y se compara con los apuntados", async () => {
   const { url, entrar, llamar, cerrar } = await arrancar();
   try {
     const admin = await entrar("admin@correo.es");
     const eva = await entrar("eva@correo.es");
     const { id } = await (await llamar(admin, "POST", "/convocatorias", DATOS)).json();
     await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion`);
-    const real = await fetch(`${url}/api/pruebas/importar?idExterno=1&nombre=Real&deporte=duatlon&fecha=2027-02-07`, {
-      method: "POST", headers: { Cookie: admin, "Content-Type": "application/octet-stream" },
-      body: await crearExcel([finalista("Eva Gil", 1995, "Club Uno", 1, 1, "00:52:00"), finalista("Beto Ruiz", 1990, "Club Dos", 2, 2, "00:53:00")]),
+    const excel = await crearExcel([finalista("Eva Gil", 1995, "Club Uno", 1, 1, "00:52:00"), finalista("Beto Ruiz", 1990, "Club Dos", 2, 2, "00:53:00")]);
+    const subir = (cookie) => fetch(`${url}/api/convocatorias/${id}/salida?sexo=F`, {
+      method: "PUT", headers: { ...(cookie ? { Cookie: cookie } : {}), "Content-Type": "application/octet-stream" }, body: excel,
     });
-    const { prueba } = await real.json();
+    assert.equal((await subir(undefined)).status, 401);
+    assert.equal((await subir(eva)).status, 403);
+    const r = await (await subir(admin)).json();
+    assert.deepEqual([r.participantes, r.asistencia.enLista, r.asistencia.sinApuntarse], [2, 1, 1]);
+    assert.deepEqual(await (await llamar(admin, "GET", `/convocatorias/${id}/asistencia`)).json(), r.asistencia);
 
-    const vinculo = await llamar(admin, "PUT", `/convocatorias/${id}/listado`, { pruebaId: prueba.id });
-    assert.equal(vinculo.status, 200);
-    const r = await vinculo.json();
-    assert.deepEqual([r.participantes, r.participaron, r.noParticiparon, r.sinApuntarse], [2, 1, 0, 1]);
-    assert.deepEqual(await (await llamar(admin, "GET", `/convocatorias/${id}/asistencia`)).json(), r);
-    assert.equal((await (await llamar(undefined, "GET", "/convocatorias")).json())[0].estado, "celebrada");
+    const publica = await (await llamar(undefined, "GET", `/convocatorias/${id}/salida`)).json();
+    assert.deepEqual(publica.map((p) => p.atleta.nombre), ["Beto Ruiz", "Eva Gil"]);
+    const lista = await (await llamar(undefined, "GET", "/convocatorias")).json();
+    assert.deepEqual([lista[0].estado, lista[0].participantes], ["cerrada", 2]);
+    assert.equal((await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion`)).status, 400, "cerrada: no admite inscripciones");
+  } finally { cerrar(); }
+});
+
+test("la predicción de una carrera futura usa su lista de salida", async () => {
+  const { url, entrar, llamar, cerrar } = await arrancar();
+  try {
+    const admin = await entrar("admin@correo.es");
+    const { id } = await (await llamar(admin, "POST", "/convocatorias", DATOS)).json();
+    assert.equal((await llamar(undefined, "GET", `/prediccion/duatlon?convocatoria=${id}`)).status, 400, "sin lista de salida");
+    await fetch(`${url}/api/convocatorias/${id}/salida`, {
+      method: "PUT", headers: { Cookie: admin, "Content-Type": "application/octet-stream" },
+      body: await crearExcel([finalista("Eva Gil", 1995, "Club Uno", 1, 1, "00:52:00"), finalista("Beto Ruiz", 1990, "Club Dos", 2, 2, "00:53:00"), finalista("Carla Gil", 1992, "Club Uno", 3, 3, "00:54:00")]),
+    });
+    const r = await llamar(undefined, "GET", `/prediccion/duatlon?convocatoria=${id}`);
+    assert.equal(r.status, 200);
+    const cuerpo = await r.json();
+    assert.equal(cuerpo.filas.length, 3);
+    assert.ok(cuerpo.filas.every((f) => f.sinHistorial === true), "nadie tiene Elo todavía");
+    assert.equal(cuerpo.carrera.nombre, "Duatlón Águilas 2027");
   } finally { cerrar(); }
 });
 
@@ -85,6 +107,6 @@ test("ERROR: sin sesión 401, usuario normal 403, datos inválidos 400 y carrera
     assert.equal((await llamar(eva, "GET", `/convocatorias/${id}/inscripciones`)).status, 403);
     assert.equal((await llamar(eva, "DELETE", `/convocatorias/${id}`)).status, 403);
     assert.equal((await llamar(admin, "GET", `/convocatorias/${id}/asistencia`)).status, 400);
-    assert.equal((await llamar(admin, "PUT", `/convocatorias/${id}/listado`, { pruebaId: "no-existe" })).status, 404);
+    assert.equal((await llamar(undefined, "GET", "/convocatorias/no-existe/salida")).status, 404);
   } finally { cerrar(); }
 });

@@ -125,12 +125,17 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
     await convocatorias.desapuntarse(req.usuarioId, req.params.id);
     res.status(204).end();
   }));
-  // Solo admin: quiénes se han apuntado, vincular el listado real (prueba importada) y ver la asistencia.
+  // Solo admin: quiénes se han apuntado, subir la lista de salida oficial (Excel como cuerpo, `sexo` y `soloMayores` en la
+  // query) y ver cuántos de los apuntados están en ella. La lista de salida es pública, como la de la federación.
   router.get("/convocatorias/:id/inscripciones", exigirSesion, manejar(async (req, res) => {
     res.status(200).json(await convocatorias.apuntados(req.usuarioId, req.params.id));
   }));
-  router.put("/convocatorias/:id/listado", exigirSesion, manejar(async (req, res) => {
-    res.status(200).json(await convocatorias.vincularListado(req.usuarioId, req.params.id, req.body?.pruebaId));
+  router.put("/convocatorias/:id/salida", exigirSesion, express.raw({ type: () => true, limit: "10mb" }), manejar(async (req, res) => {
+    const { sexo, soloMayores } = req.query;
+    res.status(200).json(await convocatorias.cargarListaSalida(req.usuarioId, req.params.id, req.body, { sexo, soloMayores: soloMayores !== "false" }));
+  }));
+  router.get("/convocatorias/:id/salida", manejar(async (req, res) => {
+    res.status(200).json(await convocatorias.listaSalida(req.params.id));
   }));
   router.get("/convocatorias/:id/asistencia", exigirSesion, manejar(async (req, res) => {
     res.status(200).json(await convocatorias.asistencia(req.usuarioId, req.params.id));
@@ -161,10 +166,10 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
     res.status(200).json(await ranking.rankingClubes(req.params.deporte, { pagina, tamano, sexo, mejores, minAtletas }));
   }));
   // Predicción de una carrera a partir del Elo (pública). base = prueba anterior cuyos participantes forman la
-  // lista de salida; retrospectiva=true usa el Elo de antes de esa prueba y añade el resultado real.
+  // lista de salida; convocatoria = carrera futura con lista de salida oficial; retrospectiva=true usa el Elo de antes de esa prueba y añade el resultado real.
   router.get("/prediccion/:deporte", manejar(async (req, res) => {
-    const { base, sexo, maximo, simulaciones, retrospectiva } = req.query;
-    res.status(200).json(await prediccion.predecir(req.params.deporte, { base, sexo, maximo, simulaciones, retrospectiva }));
+    const { base, convocatoria, sexo, maximo, simulaciones, retrospectiva } = req.query;
+    res.status(200).json(await prediccion.predecir(req.params.deporte, { base, convocatoria, sexo, maximo, simulaciones, retrospectiva }));
   }));
   router.post("/ranking/:deporte/recalcular", exigirSesion, manejar(async (req, res) => {
     res.status(200).json(await ranking.recalcular(req.usuarioId, req.params.deporte));
