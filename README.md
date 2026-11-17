@@ -76,6 +76,7 @@ Ver `.env.example` (solo nombres, sin valores reales). Copia el archivo a `.env`
 | `MONGODB_URI` | Cadena de conexión de MongoDB Atlas (es un secreto). Obligatoria en producción; en desarrollo, si falta, los datos se guardan en memoria y se pierden al reiniciar. |
 | `MONGODB_DB` | Nombre de la base de datos (opcional; por defecto `procesos`). |
 | `SECRETO_SESION` | Secreto con el que se firman las cookies de sesión. Obligatorio en producción; en desarrollo, si falta, se genera uno aleatorio (las sesiones se pierden al reiniciar). |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `URL_PUBLICA` | Opcionales: envío del correo de confirmación de cuenta (ver [docs/correo-confirmacion.md](docs/correo-confirmacion.md)). Sin `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` y `URL_PUBLICA`, el enlace de confirmación se escribe en el log del servidor. `SMTP_PASS` es un secreto. |
 
 ## Acceso de administrador
 

@@ -1,5 +1,7 @@
 // Punto de entrada del backend: elige el almacenamiento según el entorno y arranca el servidor HTTP.
 import { crearApp } from "./app.js";
+import { crearNotificadorDesdeEntorno } from "./logic/correo.js";
+import { crearLogger } from "./logger.js";
 
 const PORT = process.env.PORT || 3000;
 const { MONGODB_URI, MONGODB_DB = "procesos", NODE_ENV } = process.env;
@@ -18,6 +20,12 @@ if (MONGODB_URI) {
 } else {
   console.warn("MONGODB_URI no definido: los datos se guardan en memoria y se pierden al reiniciar");
 }
+
+// Con las variables SMTP_* y URL_PUBLICA los enlaces de confirmación se envían por correo;
+// sin ellas se escriben en el log del servidor.
+const notificar = crearNotificadorDesdeEntorno(process.env, crearLogger());
+if (notificar) opciones = { ...opciones, notificar };
+else console.warn("Correo sin configurar (SMTP_*, URL_PUBLICA): los enlaces de confirmación se escriben en el log");
 
 const app = crearApp(opciones);
 if (await app.locals.usuarios.asegurarAdministrador()) console.log("Administrador inicial confirmado (ADMIN_EMAIL)");
