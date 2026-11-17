@@ -49,3 +49,28 @@ test("ERROR: recalcular sin sesión 401 y como usuario normal 403; deporte o par
     assert.equal((await fetch(`${url}/api/ranking/duatlon?tamano=500`)).status, 400);
   } finally { cerrar(); }
 });
+
+test("GET /api/ranking/:deporte/clubes es público, usa el mínimo de atletas y valida los parámetros", async () => {
+  const { url, entrar, cerrar } = await arrancar();
+  try {
+    const admin = await entrar("admin@correo.es");
+    await fetch(`${url}/api/pruebas/importar?idExterno=1&nombre=P&deporte=duatlon&fecha=2026-03-01`, {
+      method: "POST", headers: { Cookie: admin, "Content-Type": "application/octet-stream" },
+      body: await crearExcel([
+        finalista("Ana López", 1995, "Club Uno", 1, 1, "00:52:00"), finalista("Beto Ruiz", 1990, "Club Uno", 2, 2, "00:53:00"),
+        finalista("Carla Sanz", 1992, "Club Dos", 3, 3, "00:54:00"),
+      ]),
+    });
+    await fetch(`${url}/api/ranking/duatlon/recalcular`, { method: "POST", headers: { Cookie: admin } });
+
+    const normal = await fetch(`${url}/api/ranking/duatlon/clubes?minAtletas=1`); // sin cookie: es público
+    assert.equal(normal.status, 200);
+    const datos = await normal.json();
+    assert.deepEqual(datos.filas.map((f) => f.club.nombre), ["Club Uno", "Club Dos"]);
+    assert.equal(datos.filas[0].atletas, 2);
+
+    assert.equal((await (await fetch(`${url}/api/ranking/duatlon/clubes`)).json()).total, 0, "con el mínimo por defecto (3) ninguno entra");
+    assert.equal((await fetch(`${url}/api/ranking/natacion/clubes`)).status, 400);
+    assert.equal((await fetch(`${url}/api/ranking/duatlon/clubes?mejores=0`)).status, 400);
+  } finally { cerrar(); }
+});
