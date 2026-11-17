@@ -59,12 +59,32 @@ export const rankingClubes = (deporte, sexo, pagina = 1) =>
 export const recalcularRanking = (deporte) => peticion("POST", `/ranking/${encodeURIComponent(deporte)}/recalcular`);
 
 // --- Predicción de una carrera ---
-// opciones: { base (id de prueba), sexo, retrospectiva }
-export const prediccion = (deporte, { base, sexo, retrospectiva } = {}) => {
+// opciones: { base (id de prueba) | convocatoria (id de carrera con lista de salida), sexo, retrospectiva }
+export const prediccion = (deporte, { base, convocatoria, sexo, retrospectiva } = {}) => {
   const params = new URLSearchParams();
-  if (base) params.set("base", base);
+  if (convocatoria) params.set("convocatoria", convocatoria);
+  else if (base) params.set("base", base);
   else if (sexo) params.set("sexo", sexo);
   if (base && retrospectiva) params.set("retrospectiva", "true");
   const consulta = params.toString();
   return peticion("GET", `/prediccion/${encodeURIComponent(deporte)}${consulta ? `?${consulta}` : ""}`);
 };
+
+// --- Próximas carreras e inscripciones ---
+export const listarConvocatorias = () => peticion("GET", "/convocatorias");
+export const crearConvocatoria = (datos) => peticion("POST", "/convocatorias", datos);
+export const eliminarConvocatoria = (id) => peticion("DELETE", `/convocatorias/${encodeURIComponent(id)}`);
+export const apuntarse = (id) => peticion("PUT", `/convocatorias/${encodeURIComponent(id)}/inscripcion`);
+export const desapuntarse = (id) => peticion("DELETE", `/convocatorias/${encodeURIComponent(id)}/inscripcion`);
+export const apuntadosDe = (id) => peticion("GET", `/convocatorias/${encodeURIComponent(id)}/inscripciones`);
+export const listaSalidaDe = (id) => peticion("GET", `/convocatorias/${encodeURIComponent(id)}/salida`);
+// Sube el Excel de la lista de salida (cuerpo binario, no JSON). sexo: M, F o "".
+export async function subirListaSalida(id, archivo, sexo) {
+  const respuesta = await fetch(`/api/convocatorias/${encodeURIComponent(id)}/salida${sexo ? `?sexo=${sexo}` : ""}`, {
+    method: "PUT", headers: { "Content-Type": "application/octet-stream" }, body: archivo,
+  });
+  const datos = await respuesta.json().catch(() => null);
+  if (!respuesta.ok) throw new ErrorApi(respuesta.status, datos?.codigo, datos?.error || `Error inesperado del servidor (${respuesta.status})`);
+  return datos;
+}
+export const asistenciaDe = (id) => peticion("GET", `/convocatorias/${encodeURIComponent(id)}/asistencia`);

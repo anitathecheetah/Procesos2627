@@ -29,7 +29,7 @@ const manejar = (fn) => async (req, res, next) => {
   }
 };
 
-export function crearRutasApi({ usuarios, importacion, sanciones, consulta, ranking, prediccion, sesiones, secreto, produccion = false }) {
+export function crearRutasApi({ usuarios, importacion, sanciones, consulta, ranking, prediccion, convocatorias, sesiones, secreto, produccion = false }) {
   const router = Router();
   const opcionesCookie = { maxAgeSegundos: Math.floor(sesiones.duracionMs / 1000), seguro: produccion };
 
@@ -104,6 +104,43 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
     res.status(204).end();
   }));
 
+  // Próximas carreras (PBI-37/38). Listado público (con `apuntado` si hay sesión); el resto exige sesión.
+  router.get("/convocatorias", manejar(async (req, res) => {
+    res.status(200).json(await convocatorias.listar({ usuarioId: req.usuarioId }));
+  }));
+  // Crear una carrera (solo admin): { nombre, deporte, fecha (AAAA-MM-DD), lugar }.
+  router.post("/convocatorias", exigirSesion, manejar(async (req, res) => {
+    res.status(201).json(await convocatorias.crear(req.usuarioId, req.body ?? {}));
+  }));
+  router.delete("/convocatorias/:id", exigirSesion, manejar(async (req, res) => {
+    await convocatorias.eliminar(req.usuarioId, req.params.id);
+    res.status(204).end();
+  }));
+  // Apuntarse y desapuntarse: el usuario de la sesión.
+  router.put("/convocatorias/:id/inscripcion", exigirSesion, manejar(async (req, res) => {
+    await convocatorias.apuntarse(req.usuarioId, req.params.id);
+    res.status(204).end();
+  }));
+  router.delete("/convocatorias/:id/inscripcion", exigirSesion, manejar(async (req, res) => {
+    await convocatorias.desapuntarse(req.usuarioId, req.params.id);
+    res.status(204).end();
+  }));
+  // Solo admin: quiénes se han apuntado, subir la lista de salida oficial (Excel como cuerpo, `sexo` y `soloMayores` en la
+  // query) y ver cuántos de los apuntados están en ella. La lista de salida es pública, como la de la federación.
+  router.get("/convocatorias/:id/inscripciones", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await convocatorias.apuntados(req.usuarioId, req.params.id));
+  }));
+  router.put("/convocatorias/:id/salida", exigirSesion, express.raw({ type: () => true, limit: "10mb" }), manejar(async (req, res) => {
+    const { sexo, soloMayores } = req.query;
+    res.status(200).json(await convocatorias.cargarListaSalida(req.usuarioId, req.params.id, req.body, { sexo, soloMayores: soloMayores !== "false" }));
+  }));
+  router.get("/convocatorias/:id/salida", manejar(async (req, res) => {
+    res.status(200).json(await convocatorias.listaSalida(req.params.id));
+  }));
+  router.get("/convocatorias/:id/asistencia", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await convocatorias.asistencia(req.usuarioId, req.params.id));
+  }));
+
   // Consultas públicas (como la web de resultados): no exigen sesión.
   router.get("/pruebas", manejar(async (req, res) => {
     res.status(200).json(await consulta.listarPruebas({ deporte: req.query.deporte, temporada: req.query.temporada }));
@@ -129,10 +166,10 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
     res.status(200).json(await ranking.rankingClubes(req.params.deporte, { pagina, tamano, sexo, mejores, minAtletas }));
   }));
   // Predicción de una carrera a partir del Elo (pública). base = prueba anterior cuyos participantes forman la
-  // lista de salida; retrospectiva=true usa el Elo de antes de esa prueba y añade el resultado real.
+  // lista de salida; convocatoria = carrera futura con lista de salida oficial; retrospectiva=true usa el Elo de antes de esa prueba y añade el resultado real.
   router.get("/prediccion/:deporte", manejar(async (req, res) => {
-    const { base, sexo, maximo, simulaciones, retrospectiva } = req.query;
-    res.status(200).json(await prediccion.predecir(req.params.deporte, { base, sexo, maximo, simulaciones, retrospectiva }));
+    const { base, convocatoria, sexo, maximo, simulaciones, retrospectiva } = req.query;
+    res.status(200).json(await prediccion.predecir(req.params.deporte, { base, convocatoria, sexo, maximo, simulaciones, retrospectiva }));
   }));
   router.post("/ranking/:deporte/recalcular", exigirSesion, manejar(async (req, res) => {
     res.status(200).json(await ranking.recalcular(req.usuarioId, req.params.deporte));

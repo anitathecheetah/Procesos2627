@@ -7,11 +7,13 @@
 // y se cuenta cuántas veces queda cada atleta en cada posición.
 import { ErrorLogica } from "./errores.js";
 import { DEPORTES, ESTADOS_RESULTADO } from "./catalogos.js";
+import { RATING_INICIAL } from "./elo.js";
 
 export const SIMULACIONES_POR_DEFECTO = 5000;
 export const SIMULACIONES_MAXIMAS = 20000;
-export const ATLETAS_POR_DEFECTO = 30;
-export const ATLETAS_MAXIMOS = 150;
+export const ATLETAS_POR_DEFECTO = 100; // solo sin prueba base: cuántos del ranking
+export const ATLETAS_MAXIMOS = 300;
+const ATLETAS_MAXIMOS_BASE = 500; // con prueba base entran todos los participantes; esto solo protege al servidor
 const SEMILLA = 2027;
 const ESCALA_GUMBEL = 400 / Math.LN10;
 
@@ -75,21 +77,36 @@ export function crearServicioPrediccion({ repos }) {
   return {
     // Predice la clasificación de una carrera de `deporte`.
     //  - base: id de una prueba anterior; sus participantes son la lista de salida (p. ej. Águilas 2026).
-    //    Sin base, la lista de salida son los `maximo` mejores del ranking (filtrados por `sexo`).
+    //    Con base entran TODOS los participantes (no se recorta la lista).
+    //  - convocatoria: id de una carrera futura con lista de salida oficial; se predice a todos sus participantes.
+    //    Sin base ni convocatoria, la lista de salida son los `maximo` mejores del ranking (filtrados por `sexo`): es solo una aproximación.
     //  - retrospectiva (solo con base): usa el Elo que tenía cada atleta ANTES de esa prueba y añade el
     //    resultado real, para comparar la predicción con lo que pasó.
     // El Elo sale del último recálculo del ranking.
-    async predecir(deporte, { base, sexo, maximo, simulaciones, retrospectiva } = {}) {
+    async predecir(deporte, { base, convocatoria, sexo, maximo, simulaciones, retrospectiva } = {}) {
       if (!DEPORTES.includes(deporte)) throw new ErrorLogica("DATOS_INVALIDOS", `El deporte debe ser uno de: ${DEPORTES.join(", ")}`);
       if (sexo && !["M", "F"].includes(sexo)) throw new ErrorLogica("DATOS_INVALIDOS", "El sexo debe ser M o F");
       const sims = entero(simulaciones, SIMULACIONES_POR_DEFECTO, "Las simulaciones", 100, SIMULACIONES_MAXIMAS);
       const tope = entero(maximo, ATLETAS_POR_DEFECTO, "El máximo de atletas", 2, ATLETAS_MAXIMOS);
       const retro = retrospectiva === true || retrospectiva === "true";
+      if (base && convocatoria) throw new ErrorLogica("DATOS_INVALIDOS", "Elige una prueba base o una carrera con lista de salida, no las dos");
+      if (retro && convocatoria) throw new ErrorLogica("DATOS_INVALIDOS", "La comparación con el resultado real no sirve para una carrera que aún no se ha disputado");
       if (retro && !base) throw new ErrorLogica("DATOS_INVALIDOS", "La comparación con el resultado real necesita una prueba base");
 
       let prueba = null;
-      let candidatos; // [{ atletaId, rating, clubId, real }]
-      if (base) {
+      let carrera = null;
+      let candidatos; // [{ atletaId, rating, clubId, real, sinHistorial }]
+      if (convocatoria) {
+        // Lista de salida oficial subida por el administrador: predice a TODOS los que van a competir.
+        carrera = await repos.convocatorias.buscarPorId(convocatoria);
+        if (!carrera) throw new ErrorLogica("NO_ENCONTRADO", "La carrera no existe");
+        if (carrera.deporte !== deporte) throw new ErrorLogica("DATOS_INVALIDOS", `La carrera es de ${carrera.deporte}, no de ${deporte}`);
+        const salida = await repos.salida.listar({ convocatoriaId: convocatoria });
+        if (!salida.length) throw new ErrorLogica("DATOS_INVALIDOS", "Esa carrera todavía no tiene lista de salida: el administrador debe subirla");
+        const ratings = new Map((await repos.ratings.listar({ deporte })).map((r) => [r.atletaId, r.rating]));
+        // Quien no tiene Elo (debuta en este deporte) parte del Elo inicial y se marca: su predicción es menos fiable.
+        candidatos = salida.map((p) => ({ atletaId: p.atletaId, rating: ratings.get(p.atletaId) ?? RATING_INICIAL, clubId: p.clubId, real: null, sinHistorial: !ratings.has(p.atletaId) }));
+      } else if (base) {
         prueba = await repos.pruebas.buscarPorId(base);
         if (!prueba) throw new ErrorLogica("NO_ENCONTRADO", "La prueba no existe");
         if (prueba.deporte !== deporte) throw new ErrorLogica("DATOS_INVALIDOS", `La prueba base es de ${prueba.deporte}, no de ${deporte}`);
@@ -104,7 +121,7 @@ export function crearServicioPrediccion({ repos }) {
           .map((r) => ({ atletaId: r.atletaId, rating: r.rating, clubId: r.clubId, real: null }));
       }
       candidatos.sort((a, b) => b.rating - a.rating || a.atletaId.localeCompare(b.atletaId));
-      candidatos = candidatos.slice(0, tope);
+      candidatos = candidatos.slice(0, base || convocatoria ? ATLETAS_MAXIMOS_BASE : tope);
 
       const estadisticas = simular(candidatos.map((c) => ({ id: c.atletaId, rating: c.rating })), { simulaciones: sims });
       const filas = await Promise.all(candidatos.map(async (c, i) => {
@@ -115,6 +132,7 @@ export function crearServicioPrediccion({ repos }) {
           club: club ? { id: club.id, nombre: club.nombre } : null,
           rating: Math.round(c.rating),
           ...numeros,
+          ...(c.sinHistorial ? { sinHistorial: true } : {}),
           ...(retro ? { posicionReal: c.real } : {}),
         };
       }));
@@ -126,6 +144,7 @@ export function crearServicioPrediccion({ repos }) {
         simulaciones: sims,
         retrospectiva: retro,
         base: prueba ? { id: prueba.id, nombre: prueba.nombre, fecha: prueba.fecha } : null,
+        ...(carrera ? { carrera: { id: carrera.id, nombre: carrera.nombre, fecha: carrera.fecha } } : {}),
         ...(retro ? errorDePrediccion(filas) : {}),
         filas,
       };

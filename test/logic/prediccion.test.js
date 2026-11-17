@@ -3,6 +3,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { generador, simular, crearServicioPrediccion } from "../../server/logic/prediccion.js";
 import { crearServicioRanking } from "../../server/logic/ranking.js";
+import { crearServicioConvocatorias } from "../../server/logic/convocatorias.js";
 import { crearServicioImportacion } from "../../server/logic/importacion.js";
 import { crearServicioDominio } from "../../server/logic/dominio.js";
 import { crearColeccionMemoria } from "../../server/data/coleccionMemoria.js";
@@ -58,7 +59,7 @@ function preparar() {
   const importar = async (idExterno, fecha, nombres, extra = {}) =>
     (await importacion.importar("a", { idExterno, nombre: `Prueba ${idExterno}`, deporte: "duatlon", fecha, ...extra },
       await crearExcel(nombres.map((n, i) => finalista(n, 1990 + (n.charCodeAt(0) % 9), "Club Uno", i + 1, i + 1, `00:5${i + 1}:00`))))).prueba;
-  return { importar, ranking: crearServicioRanking({ repos, usuarios: admin }), prediccion: crearServicioPrediccion({ repos }) };
+  return { importar, importacion, ranking: crearServicioRanking({ repos, usuarios: admin }), prediccion: Object.assign(crearServicioPrediccion({ repos }), { __repos: repos }) };
 }
 const NOMBRES = ["Ana Uno", "Beto Dos", "Carla Tres", "Dani Cuatro", "Eva Cinco", "Fran Seis"];
 
@@ -76,6 +77,16 @@ test("con una prueba base, la lista de salida son sus participantes y el favorit
   assert.ok(r.filas[0].probVictoria > r.filas[5].probVictoria);
   assert.equal(r.filas[0].club.nombre, "Club Uno");
   assert.ok(!("posicionReal" in r.filas[0]));
+});
+
+test("con una prueba base se predice a TODOS los participantes, también con más atletas que el máximo por defecto", async () => {
+  const { importacion, ranking, prediccion } = preparar();
+  const filas = Array.from({ length: 120 }, (_, i) =>
+    finalista(`Atleta${String(i).padStart(3, "0")} Apellido`, 1990, "Club", i + 1, i + 1, `01:${String(Math.floor(i / 60)).padStart(2, "0")}:${String(i % 60).padStart(2, "0")}`));
+  const base = (await importacion.importar("a", { idExterno: "1", nombre: "Grande", deporte: "duatlon", fecha: "2026-02-01", sexo: "M" }, await crearExcel(filas))).prueba;
+  await ranking.recalcular("a", "duatlon");
+  const r = await prediccion.predecir("duatlon", { base: base.id, maximo: "5", simulaciones: "200" });
+  assert.equal(r.filas.length, 120, "el máximo solo se aplica sin prueba base");
 });
 
 test("sin base usa los mejores del ranking, filtra por sexo y respeta el máximo", async () => {
@@ -124,4 +135,30 @@ test("ERROR: datos de la petición no válidos", async () => {
 test("ERROR: sin ranking calculado no hay con quién predecir", async () => {
   const { prediccion } = preparar();
   await assert.rejects(prediccion.predecir("duatlon"), codigo("DATOS_INVALIDOS"));
+});
+
+test("con una carrera futura se predice a TODOS los de su lista de salida; quien debuta parte del Elo inicial y se marca", async () => {
+  const { importar, importacion, ranking, prediccion } = preparar();
+  const repos = prediccion.__repos;
+  assert.ok(repos);
+  await importar("1", "2026-02-01", NOMBRES);
+  await ranking.recalcular("a", "duatlon");
+  const convocatorias = crearServicioConvocatorias({ repos, usuarios: { async exigirAdministrador() {} }, dominio: crearServicioDominio(repos) });
+  const carrera = await convocatorias.crear("a", { nombre: "Águilas 2027", deporte: "duatlon", fecha: "2027-02-07", lugar: "Águilas" });
+  assert.ok(importacion);
+  await assert.rejects(prediccion.predecir("duatlon", { convocatoria: carrera.id }), codigo("DATOS_INVALIDOS"), "sin lista de salida no se puede");
+  const filas = [...NOMBRES, "Debutante Nuevo"].map((n, i) => finalista(n, 1990 + (n.charCodeAt(0) % 9), "Club Uno", i + 1, i + 1, "00:50:00"));
+  await convocatorias.cargarListaSalida("a", carrera.id, await crearExcel(filas));
+  const r = await prediccion.predecir("duatlon", { convocatoria: carrera.id });
+  assert.equal(r.filas.length, 7);
+  assert.equal(r.carrera.nombre, "Águilas 2027");
+  assert.equal(r.base, null);
+  const debutante = r.filas.find((f) => f.atleta.nombre === "Debutante Nuevo");
+  assert.equal(debutante.sinHistorial, true);
+  assert.equal(debutante.rating, 1500);
+  assert.ok(!("sinHistorial" in r.filas.find((f) => f.atleta.nombre === "Ana Uno")));
+  await assert.rejects(prediccion.predecir("duatlon", { convocatoria: carrera.id, base: "x" }), codigo("DATOS_INVALIDOS"));
+  await assert.rejects(prediccion.predecir("duatlon", { convocatoria: carrera.id, retrospectiva: "true" }), codigo("DATOS_INVALIDOS"));
+  await assert.rejects(prediccion.predecir("triatlon", { convocatoria: carrera.id }), codigo("DATOS_INVALIDOS"));
+  await assert.rejects(prediccion.predecir("duatlon", { convocatoria: "no-existe" }), codigo("NO_ENCONTRADO"));
 });
