@@ -9,6 +9,7 @@ export function crearPestanas(pestanas, { inicial = 0 } = {}) {
   const lista = el("div", undefined, { className: "pestanas-lista", role: "tablist" });
   const panel = el("div", undefined, { className: "pestanas-panel", role: "tabpanel", tabIndex: 0 });
   const contenidos = new Map();
+  let actual = inicial;
   const botones = pestanas.map((p, i) => {
     const b = el("button", p.titulo, { type: "button", className: "pestana", role: "tab", id: `pestana-${p.id}` });
     b.addEventListener("click", () => elegir(i));
@@ -23,6 +24,7 @@ export function crearPestanas(pestanas, { inicial = 0 } = {}) {
   });
 
   function elegir(i) {
+    actual = i;
     botones.forEach((b, k) => {
       b.setAttribute("aria-selected", String(k === i));
       b.tabIndex = k === i ? 0 : -1;
@@ -37,6 +39,8 @@ export function crearPestanas(pestanas, { inicial = 0 } = {}) {
 
   lista.append(...botones);
   raiz.append(lista, panel);
+  // Vuelve a construir la pestaña abierta (y descarta las demás): para cuando cambian los datos de los que dependen.
+  raiz.refrescar = () => { contenidos.clear(); elegir(actual); };
   elegir(inicial);
   return raiz;
 }

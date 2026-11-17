@@ -9,6 +9,16 @@ Al abrir una prueba en **Resultados** se muestra con pestañas (se navega con el
 | **Clasificación** | Mejor tiempo de cada segmento, y la clasificación con filtros por atleta y club y orden por segmento (PBI-25). |
 | **Predicción** | La predicción hecha con el Elo de antes de la prueba comparada con el resultado real (PBI-26, ver [prediccion.md](prediccion.md)). |
 
+## Ritmos y distancias
+
+Sobre las pestañas hay un selector de **distancias de la prueba**, y de ellas salen los ritmos (PBI-35):
+
+- **Natación:** min por 100 m. **Bici:** km/h. **Carrera:** min por km (en duatlón, las dos carreras, cada una con su distancia). T1 y T2 solo tienen tiempo.
+- Los ritmos aparecen bajo cada media del **Resumen**, junto al tiempo de los 3 mejores de cada segmento y en **Splits** con el botón **Ritmo**. Los ritmos en min:seg se truncan al segundo, como en Split Lab.
+- Distancias predefinidas: triatlón súper sprint (300 m · 8 km · 2,5 km), sprint (750 m · 20 km · 5 km) y estándar/olímpica (1,5 km · 40 km · 10 km); duatlón sprint (5 km · 20 km · 2,5 km) y estándar (10 km · 40 km · 5 km). También se pueden escribir **personalizadas**. Por defecto: triatlón estándar y duatlón sprint.
+- La elección se recuerda por deporte en el navegador de cada persona; todavía no se guarda en la prueba. Si una prueba tiene otras distancias, hay que elegirlas.
+- Los cálculos están en `client/js/ritmos.js` (sin DOM, con pruebas).
+
 ## Cómo se calcula
 
 - Los segmentos son los 5 parciales: natación (carrera 1 en duatlón), T1, bici, T2 y carrera.

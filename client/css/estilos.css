@@ -64,6 +64,7 @@ button.enlace, td button.enlace { padding: 0; background: none; border: 0; color
 /* Resumen */
 .cifras, .podio, .mejores-segmentos { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); }
 .podio { grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+.mejores-segmentos { grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr)); }
 .mini-tarjeta { display: flex; flex-direction: column; gap: .15rem; padding: .75rem .9rem; background: var(--elevada); border: 1px solid var(--borde); border-radius: .6rem; }
 .cifras strong { font-size: 1.25rem; }
 .podio .mini-tarjeta { border-left: 3px solid var(--borde); }
@@ -74,6 +75,11 @@ button.enlace, td button.enlace { padding: 0; background: none; border: 0; color
 .caja-segmento h5 { margin: 0 0 .4rem; font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; color: var(--suave); }
 .fila-top { display: flex; gap: .4rem; align-items: baseline; padding: .2rem 0; font-size: .88rem; }
 .fila-top button { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Ritmos y distancias */
+.ajuste-distancias { margin: .5rem 0 0; }
+.ritmo { font-size: .75rem; color: var(--ok); font-variant-numeric: tabular-nums; }
+.fila-top .ritmo { margin-left: .25rem; }
 
 /* Splits */
 .barra-herramientas { display: flex; justify-content: space-between; gap: .5rem; margin: .5rem 0 .75rem; }
