@@ -5,10 +5,17 @@ import { ErrorLogica } from "./errores.js";
 import { leerResultados } from "./excelResultados.js";
 import { normalizarNombre } from "./normalizacion.js";
 
+// Protección de menores: por defecto no se importa a quien pueda ser menor de edad en el año de la prueba.
+// Se compara solo el año de nacimiento, así que se excluye también a quien cumple 18 ese año (lado prudente).
+// Los menores se descartan antes de guardar nada: ni su nombre ni su año llegan a la base de datos ni al log.
+export const MAYORIA_DE_EDAD = 18;
+export const esPosibleMenor = (anioNacimiento, fechaPrueba) => Number(fechaPrueba.slice(0, 4)) - anioNacimiento <= MAYORIA_DE_EDAD;
+
 // repos: { atletas, pruebas, resultados, ... }; dominio: servicio de dominio.js; usuarios: servicio de usuarios.
 export function crearServicioImportacion({ repos, dominio, usuarios, log = { info() {} } }) {
   return {
-    async importar(solicitanteId, meta = {}, buffer) {
+    // meta.soloMayores (por defecto true): false permite importar también a los posibles menores.
+    async importar(solicitanteId, { soloMayores = true, ...meta } = {}, buffer) {
       await usuarios.exigirAdministrador(solicitanteId);
       if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
         throw new ErrorLogica("DATOS_INVALIDOS", "Falta el archivo Excel");
@@ -19,6 +26,13 @@ export function crearServicioImportacion({ repos, dominio, usuarios, log = { inf
       // La prueba rechaza datos inválidos y también una prueba ya importada (mismo idExterno).
       const prueba = await dominio.crearPrueba(meta);
       const sexo = meta.sexo || undefined;
+
+      const permitidos = soloMayores === false ? resultados : resultados.filter((r) => !esPosibleMenor(r.anioNacimiento, prueba.fecha));
+      const menoresExcluidos = resultados.length - permitidos.length;
+      if (permitidos.length === 0) {
+        await repos.pruebas.eliminar(prueba.id);
+        throw new ErrorLogica("DATOS_INVALIDOS", "El Excel solo contiene posibles menores de edad: no se importa nada");
+      }
 
       // Nombres ya conocidos, para avisar de posibles homónimos con otro año de nacimiento.
       const aniosPorNombre = new Map();
@@ -31,7 +45,7 @@ export function crearServicioImportacion({ repos, dominio, usuarios, log = { inf
       const revisar = [];
       let importados = 0;
       try {
-        for (const r of resultados) {
+        for (const r of permitidos) {
           const nombreNorm = normalizarNombre(r.nombre);
           const otrosAnios = (aniosPorNombre.get(nombreNorm) ?? []).filter((y) => y !== r.anioNacimiento);
           const atleta = await dominio.obtenerOCrearAtleta({ nombre: r.nombre, anioNacimiento: r.anioNacimiento, sexo });
@@ -79,8 +93,8 @@ export function crearServicioImportacion({ repos, dominio, usuarios, log = { inf
         await repos.pruebas.eliminar(prueba.id);
         throw e;
       }
-      log.info("Prueba importada", { prueba: prueba.id, importados, descartados: descartadas.length });
-      return { prueba, importados, descartadas, revisar };
+      log.info("Prueba importada", { prueba: prueba.id, importados, descartados: descartadas.length, menoresExcluidos });
+      return { prueba, importados, menoresExcluidos, descartadas, revisar };
     },
   };
 }

@@ -9,10 +9,16 @@ Un administrador sube la clasificación de **una categoría de una prueba** (por
 - Cuerpo: el archivo `.xlsx` en binario. Máximo 10 MB.
 - Solo administradores (401 sin sesión, 403 si no es administrador).
 - `idExterno` identifica la prueba en la web de origen (por ejemplo `2449-5790`): reimportarla devuelve **409** y no duplica nada.
-- Respuesta **201**: `{ prueba, importados, descartadas: [{fila, motivo}], revisar: [{atleta, dorsal, motivos}] }`.
+- Respuesta **201**: `{ prueba, importados, menoresExcluidos, descartadas: [{fila, motivo}], revisar: [{atleta, dorsal, motivos}] }`.
 - Errores: 400 si el archivo no es un Excel, faltan columnas o los datos de la prueba no son válidos.
 
 Ejemplo: `curl -X POST -b cookie.txt --data-binary @resultados.xlsx -H "Content-Type: application/octet-stream" "http://localhost:3000/api/pruebas/importar?idExterno=2449-5790&nombre=Duatl%C3%B3n%20%C3%81guilas&deporte=duatlon&fecha=2026-02-15&sexo=M"`
+
+## Menores de edad
+
+Las clasificaciones de la federación incluyen a menores. **Por defecto no se importan**: se excluye a quien, por su año de nacimiento, pueda tener menos de 18 años en el año de la prueba (año de la prueba − año de nacimiento ≤ 18; por prudencia también cae quien cumple 18 ese año). Se descartan antes de guardar nada, así que su nombre y su año de nacimiento no llegan a la base de datos ni al log; la respuesta solo dice cuántos se han excluido (`menoresExcluidos`). Si todo el archivo son posibles menores, no se crea la prueba (400).
+
+Para incluirlos hay que pedirlo expresamente: `soloMayores=false` en la petición o `--menores incluir` en el script. No debe hacerse con datos reales sin permiso de la federación.
 
 ## Estructura del Excel
 
