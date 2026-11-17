@@ -5,7 +5,7 @@ import {
 } from "./api.js";
 import {
   mostrarConvocatorias, mostrarFormularioAdmin, limpiarDetalle, mostrarApuntados,
-  mostrarFormularioLista, mostrarLista, mostrarAsistencia, mostrarAvisoConvocatorias, mostrarPreparacion,
+  mostrarFormularioInscripcion, mostrarFormularioLista, mostrarLista, mostrarAsistencia, mostrarAvisoConvocatorias, mostrarPreparacion,
 } from "./vistaConvocatorias.js";
 
 let usuario = null;
@@ -26,7 +26,11 @@ async function cargar() {
 
 const acciones = {
   alPreparar: (c) => intentar(async () => mostrarPreparacion(await preparacionDe(c.id))),
-  alApuntarse: (c) => intentar(async () => { await apuntarse(c.id); await cargar(); }),
+  alApuntarse: (c) => mostrarFormularioInscripcion(c, usuario?.nombre, (carrera, nombre) => intentar(async () => {
+    await apuntarse(carrera.id, nombre);
+    limpiarDetalle();
+    await cargar();
+  })),
   alDesapuntarse: (c) => intentar(async () => { await desapuntarse(c.id); await cargar(); }),
   alVerApuntados: (c) => intentar(async () => mostrarApuntados(c, await apuntadosDe(c.id))),
   alVerAsistencia: (c) => intentar(async () => mostrarAsistencia(await asistenciaDe(c.id))),

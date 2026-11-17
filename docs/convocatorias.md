@@ -3,7 +3,7 @@
 ## Qué hace
 
 1. El **administrador** crea las próximas carreras (nombre, deporte, fecha y lugar) en la tarjeta **Próximas carreras**.
-2. Cada **usuario con sesión** pulsa **Me apunto** en las que va a ir (y **Ya no voy** si cambia de idea). Cualquiera ve cuántos se han apuntado; solo el administrador ve los nombres (sin email).
+2. Cada **usuario con sesión** pulsa **Me apunto** en las que va a ir (la app le pide su **nombre y sus dos apellidos**, rellenados con el de su cuenta, para poder reconocerle en la lista de la federación) (y **Ya no voy** si cambia de idea). Cualquiera ve cuántos se han apuntado; solo el administrador ve los nombres (sin email).
 3. Antes de la carrera, la federación publica la **lista de salida** oficial. El administrador la sube como Excel con **Subir lista de salida**. La carrera pasa a **cerrada** (con lista de salida), deja de admitir inscripciones y el administrador ve la **asistencia**: quién de los apuntados está en la lista, quién no y cuántos participantes no se habían apuntado.
 4. La **predicción** de esa carrera usa la lista de salida: se predice a todos los que van a competir (ver [prediccion.md](prediccion.md)).
 5. Después de la carrera se importan los resultados como siempre (ver [importacion-excel.md](importacion-excel.md)).
@@ -19,7 +19,7 @@ Una hoja, una fila por atleta. Las columnas se localizan por el nombre de la cab
 
 ## Cómo se compara con los apuntados
 
-La coincidencia es por nombre: las palabras del nombre del usuario deben aparecer todas en el del atleta, da igual el orden, las tildes o si viene como «APELLIDOS, NOMBRE» (por ejemplo, «Ana Rodríguez» coincide con «RODRIGUEZ MARTIN, ANA»). Hacen falta al menos 2 palabras y cada atleta solo cuenta para un apuntado. Los usuarios y los atletas no están enlazados por ningún identificador, así que conviene revisar a mano los «No».
+La coincidencia es por nombre: las palabras del nombre del usuario deben aparecer todas en el del atleta, da igual el orden, las tildes o si viene como «APELLIDOS, NOMBRE» (por ejemplo, «Ana Rodríguez Martín» coincide con «RODRIGUEZ MARTIN, ANA»). Al apuntarse se exigen al menos 3 palabras (nombre y dos apellidos), lo que evita coincidencias con quien solo tiene dos y cada atleta solo cuenta para un apuntado. Los usuarios y los atletas no están enlazados por ningún identificador, así que conviene revisar a mano los «No».
 
 ## Datos y privacidad
 

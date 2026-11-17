@@ -1,5 +1,5 @@
 // Próximas carreras (convocatorias), inscripciones de usuarios y lista de salida oficial (PBI-37 y PBI-38).
-// El administrador crea la carrera; cada usuario con sesión puede apuntarse o desapuntarse mientras esté
+// El administrador crea la carrera; cada usuario con sesión puede apuntarse (indicando su nombre y sus dos apellidos) o desapuntarse mientras esté
 // abierta. Antes de la carrera la federación publica la lista de salida; el administrador la sube (Excel), la
 // carrera pasa a «cerrada» y se compara quién de los apuntados está de verdad en la lista. La predicción usa esa lista.
 // Documentada en docs/convocatorias.md.
@@ -121,15 +121,18 @@ export function crearServicioConvocatorias({ repos, usuarios, dominio, log = { i
       log.info("Carrera eliminada", { id });
     },
 
-    // El usuario de la sesión se apunta. Si ya lo estaba, no pasa nada.
-    async apuntarse(usuarioId, id) {
+    // El usuario de la sesión se apunta con su nombre y sus dos apellidos (así se le reconoce después en la lista
+    // de salida oficial). Si ya estaba apuntado, se actualiza el nombre y no se duplica.
+    async apuntarse(usuarioId, id, nombreCompleto) {
       if (!usuarioId) throw new ErrorLogica("NO_AUTENTICADO", "Inicia sesión para apuntarte");
-      const usuario = await usuarios.obtener(usuarioId);
+      await usuarios.obtener(usuarioId);
       const c = await buscar(id);
+      const nombre = texto(nombreCompleto, "El nombre", { min: 1, max: 100 });
+      if (palabras(nombre).length < 3) throw new ErrorLogica("DATOS_INVALIDOS", "Indica tu nombre y tus dos apellidos para apuntarte");
       if (c.estado !== ESTADOS_CONVOCATORIA.ABIERTA) throw new ErrorLogica("DATOS_INVALIDOS", "La carrera ya tiene lista de salida oficial y no admite inscripciones");
-      if (!(await repos.inscripciones.buscarUno({ convocatoriaId: id, usuarioId }))) {
-        await repos.inscripciones.crear({ id: randomUUID(), convocatoriaId: id, usuarioId, nombre: usuario.nombre });
-      }
+      const previa = await repos.inscripciones.buscarUno({ convocatoriaId: id, usuarioId });
+      if (!previa) await repos.inscripciones.crear({ id: randomUUID(), convocatoriaId: id, usuarioId, nombre });
+      else if (previa.nombre !== nombre) await repos.inscripciones.actualizar({ ...previa, nombre });
     },
 
     // El usuario de la sesión deja de ir. Si no estaba apuntado, no pasa nada.
