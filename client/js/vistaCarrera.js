@@ -4,19 +4,71 @@ import { NOMBRES_PARCIALES } from "./parciales.js";
 import { SEGMENTOS, construirSplits, ordenarSplits, mejoresDelSegmento, resumenCarrera, csvSplits } from "./segmentos.js";
 import { el, enlace, formatearTiempo, formatearTiempoCorto } from "./dom.js";
 import { construirPrediccion } from "./vistaPrediccion.js";
+import { DISTANCIAS, DISTANCIA_POR_DEFECTO, PERSONALIZADA, distanciasDe, textoRitmo } from "./ritmos.js";
 
 const nombresDe = (prueba) => NOMBRES_PARCIALES[prueba.deporte] ?? Array.from({ length: SEGMENTOS }, (_, i) => `Segmento ${i + 1}`);
 const tarjeta = (...hijos) => { const t = el("div", undefined, { className: "mini-tarjeta" }); t.append(...hijos); return t; };
 
-export function panelResumen({ prueba, clasificacion }, { alElegirAtleta }) {
+function leerGuardado(deporte) {
+  try { return JSON.parse(localStorage.getItem(`ritmos:${deporte}`)) ?? {}; } catch { return {}; }
+}
+function guardar(deporte, valor) {
+  try { localStorage.setItem(`ritmos:${deporte}`, JSON.stringify(valor)); } catch { /* sin almacenamiento: no se recuerda */ }
+}
+
+// Selector de las distancias de la prueba, de las que salen los ritmos. Se recuerda por deporte en este navegador.
+// Devuelve { nodo, metros }: `metros()` da las distancias elegidas ([nat o c1, bici, carrera] en metros) o null.
+export function crearAjusteDistancias(deporte, alCambiar) {
+  const presets = DISTANCIAS[deporte];
+  if (!presets) return { nodo: null, metros: () => null };
+  const guardado = leerGuardado(deporte);
+  const estado = {
+    clave: guardado.clave === PERSONALIZADA || presets[guardado.clave] ? guardado.clave : DISTANCIA_POR_DEFECTO[deporte],
+    personalizadas: Array.isArray(guardado.personalizadas) ? guardado.personalizadas : presets[DISTANCIA_POR_DEFECTO[deporte]].metros,
+  };
+  const triatlon = deporte === "triatlon";
+  const campos = [[triatlon ? "Natación (m)" : "Carrera 1 (km)", triatlon ? 1 : 1000], ["Bici (km)", 1000], [triatlon ? "Carrera (km)" : "Carrera 2 (km)", 1000]];
+
+  const selector = el("select");
+  Object.entries(presets).forEach(([clave, p]) => selector.append(el("option", p.nombre, { value: clave })));
+  selector.append(el("option", "Personalizadas…", { value: PERSONALIZADA }));
+  selector.value = estado.clave;
+  const etiqueta = el("label", "Distancias de la prueba (para calcular los ritmos)");
+  etiqueta.append(selector);
+
+  const personalizadas = el("div", undefined, { className: "filtros" });
+  const entradas = campos.map(([texto, factor], i) => {
+    const entrada = el("input", undefined, { type: "number", min: "0", step: "any", value: String(estado.personalizadas[i] / factor) });
+    const l = el("label", texto);
+    l.append(entrada);
+    personalizadas.append(l);
+    entrada.addEventListener("input", () => { estado.personalizadas = entradas.map((e, k) => Number(e.value) * campos[k][1]); cambiar(); });
+    return entrada;
+  });
+  personalizadas.hidden = estado.clave !== PERSONALIZADA;
+
+  const cambiar = () => { guardar(deporte, estado); alCambiar(); };
+  selector.addEventListener("change", () => { estado.clave = selector.value; personalizadas.hidden = estado.clave !== PERSONALIZADA; cambiar(); });
+
+  const nodo = el("div", undefined, { className: "ajuste-distancias" });
+  nodo.append(etiqueta, personalizadas);
+  return { nodo, metros: () => distanciasDe(deporte, estado.clave, estado.personalizadas) };
+}
+
+export function panelResumen({ prueba, clasificacion }, { alElegirAtleta, metros = () => null }) {
   const nombres = nombresDe(prueba);
   const splits = construirSplits(clasificacion);
   const r = resumenCarrera(clasificacion);
+  const ritmo = (i, segundos) => textoRitmo(prueba.deporte, i, segundos, metros());
 
   const cifras = el("div", undefined, { className: "cifras" });
   cifras.append(
     tarjeta(el("strong", `${r.finalizados}/${r.salieron}`), el("span", "Finalizaron", { className: "suave" })),
-    ...nombres.map((n, i) => tarjeta(el("strong", formatearTiempoCorto(r.medias[i])), el("span", `Media ${n}`, { className: "suave" }))),
+    ...nombres.map((n, i) => tarjeta(
+      el("strong", formatearTiempoCorto(r.medias[i])),
+      el("span", `Media ${n}`, { className: "suave" }),
+      ...(ritmo(i, r.medias[i]) ? [el("span", ritmo(i, r.medias[i]), { className: "ritmo" })] : []),
+    )),
   );
 
   const podio = el("div", undefined, { className: "podio" });
@@ -40,6 +92,7 @@ export function panelResumen({ prueba, clasificacion }, { alElegirAtleta }) {
     top.forEach((m) => {
       const fila = el("div", undefined, { className: "fila-top" });
       fila.append(el("span", `${m.puesto}.`, { className: "suave" }), enlace(m.nombre, () => alElegirAtleta({ id: m.id })), el("strong", formatearTiempoCorto(m.tiempo)));
+      if (ritmo(i, m.tiempo)) fila.append(el("span", ritmo(i, m.tiempo), { className: "ritmo" }));
       caja.append(fila);
     });
     mejores.append(caja);
@@ -65,13 +118,13 @@ function descargar(nombreArchivo, texto) {
   URL.revokeObjectURL(url);
 }
 
-export function panelSplits({ prueba, clasificacion }, { alElegirAtleta }) {
+export function panelSplits({ prueba, clasificacion }, { alElegirAtleta, metros = () => null }) {
   const nombres = nombresDe(prueba);
   const filas = construirSplits(clasificacion);
   const estado = { columna: "posicion", descendente: false, modo: "tiempo" };
 
   const modos = el("div", undefined, { className: "conmutador", role: "group" });
-  const botonesModo = [["tiempo", "Tiempo"], ["puestos", "Puestos"]].map(([clave, texto]) => {
+  const botonesModo = [["tiempo", "Tiempo"], ["puestos", "Puestos"], ["ritmo", "Ritmo"]].map(([clave, texto]) => {
     const b = el("button", texto, { type: "button", className: "conmutador-boton" });
     b.addEventListener("click", () => { estado.modo = clave; pintar(); });
     b.dataset.modo = clave;
@@ -118,6 +171,7 @@ export function panelSplits({ prueba, clasificacion }, { alElegirAtleta }) {
         const td = el("td", undefined, { className: f.puestos[i] === 1 ? "mejor" : "" });
         if (tiempo === null) td.textContent = "—";
         else if (estado.modo === "puestos") td.textContent = String(f.puestos[i]);
+        else if (estado.modo === "ritmo") td.append(textoRitmo(prueba.deporte, i, tiempo, metros()) || formatearTiempoCorto(tiempo), el("sup", String(f.puestos[i]), { className: "puesto" }));
         else td.append(formatearTiempoCorto(tiempo), el("sup", String(f.puestos[i]), { className: "puesto" }));
         fila.append(td);
       });
@@ -130,7 +184,7 @@ export function panelSplits({ prueba, clasificacion }, { alElegirAtleta }) {
 
   return [
     el("h4", "Splits"),
-    el("p", "Tiempo de cada atleta en cada segmento y su puesto en él (número pequeño). En verde, el mejor tiempo. Pulsa una cabecera para ordenar.", { className: "suave" }),
+    el("p", "Tiempo de cada atleta en cada segmento y su puesto en él (número pequeño). En verde, el mejor tiempo. «Ritmo» muestra min/100 m en natación, km/h en bici y min/km en carrera (según las distancias elegidas). Pulsa una cabecera para ordenar.", { className: "suave" }),
     barra,
     filas.length ? contenedor : el("p", "Todavía no hay finalistas.", { className: "vacio" }),
   ];

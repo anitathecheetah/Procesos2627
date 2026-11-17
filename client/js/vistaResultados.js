@@ -4,7 +4,7 @@ import { NOMBRES_PARCIALES } from "./parciales.js";
 import { filtrarClasificacion, esMejorSegmento } from "./filtrosResultados.js";
 import { textoElo } from "./elo.js";
 import { crearPestanas } from "./pestanas.js";
-import { panelResumen, panelSplits, panelPrediccion } from "./vistaCarrera.js";
+import { panelResumen, panelSplits, panelPrediccion, crearAjusteDistancias } from "./vistaCarrera.js";
 import { el, enlace, tabla, formatearTiempo, formatearFecha } from "./dom.js";
 
 const DEPORTES = { duatlon: "Duatlón", triatlon: "Triatlón" };
@@ -122,6 +122,9 @@ export function mostrarDetallePrueba({ prueba, clasificacion, mejoresSegmentos }
   filtros.addEventListener("input", pintar);
 
   const datos = { prueba, clasificacion };
+  let pestanas;
+  const ajuste = crearAjusteDistancias(prueba.deporte, () => pestanas?.refrescar());
+  const opciones = { alElegirAtleta, metros: ajuste.metros };
   const clasificacionNodos = () => [
     el("h4", "Mejor tiempo de cada segmento"),
     tablaMejores(nombres, mejoresSegmentos, alElegirAtleta),
@@ -134,12 +137,13 @@ export function mostrarDetallePrueba({ prueba, clasificacion, mejoresSegmentos }
     enlace("← Volver", alVolver),
     el("h3", prueba.nombre),
     el("p", `${formatearFecha(prueba.fecha)} · ${DEPORTES[prueba.deporte] ?? prueba.deporte}${prueba.categoria ? ` · ${prueba.categoria}` : ""}`, { className: "suave" }),
-    crearPestanas([
-      { id: "resumen", titulo: "Resumen", contenido: () => panelResumen(datos, { alElegirAtleta }) },
-      { id: "splits", titulo: "Splits", contenido: () => panelSplits(datos, { alElegirAtleta }) },
+    ...(ajuste.nodo ? [ajuste.nodo] : []),
+    (pestanas = crearPestanas([
+      { id: "resumen", titulo: "Resumen", contenido: () => panelResumen(datos, opciones) },
+      { id: "splits", titulo: "Splits", contenido: () => panelSplits(datos, opciones) },
       { id: "clasificacion", titulo: "Clasificación", contenido: clasificacionNodos },
       { id: "prediccion", titulo: "Predicción", contenido: () => panelPrediccion(prueba, alPredecir) },
-    ]),
+    ])),
   ]);
   pintar();
 }
