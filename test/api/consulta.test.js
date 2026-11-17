@@ -35,6 +35,8 @@ test("las consultas son públicas: listado, detalle, búsqueda y ficha", async (
     const detalle = await json(await fetch(`${url}/api/pruebas/${prueba.id}`));
     assert.equal(detalle.estado, 200);
     assert.deepEqual(detalle.cuerpo.clasificacion.map((f) => f.atleta.nombre), ["Ana López", "Beto Ruiz"]);
+    assert.equal(detalle.cuerpo.mejoresSegmentos.length, 5, "el detalle trae el mejor tiempo de cada segmento");
+    assert.equal(detalle.cuerpo.mejoresSegmentos[0].tiempo, 840);
 
     const busqueda = await json(await fetch(`${url}/api/atletas?q=${encodeURIComponent("lópez")}`));
     assert.equal(busqueda.cuerpo.length, 1);

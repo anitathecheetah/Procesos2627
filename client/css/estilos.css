@@ -43,3 +43,6 @@ button.enlace, td button.enlace { padding: 0; background: none; border: 0; color
 .explicacion summary { cursor: pointer; color: var(--suave); }
 .explicacion ul { margin: 0.5rem 0 0; padding-left: 1.2rem; }
 .explicacion li { margin: 0.25rem 0; }
+
+.filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.5rem 1rem; margin: 0.5rem 0; }
+.filtros label { margin-bottom: 0; }

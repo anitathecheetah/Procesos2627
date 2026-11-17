@@ -32,7 +32,7 @@ Script: `node scripts/borrar-pruebas.mjs --url <app> --email <admin> <idExterno>
 
 Columnas: `EVENTO, PHASE, ID, NOMBRE, AÑO, CLUB, FEDERACION, DORSAL, NACIMIENTO, 5 parciales, POSICION, POSICION_FINAL, ESTADO, TIEMPO` (más columnas a la derecha, que se ignoran). Se localizan por el nombre de la cabecera.
 
-- Los 5 parciales son carrera, T1, ciclismo, T2, carrera (duatlón) o natación, T1, ciclismo, T2, carrera (triatlón). La clasificación de una prueba los muestra con esos nombres según su deporte (columna «Parciales»); el importador es el mismo para los dos deportes, solo cambia `deporte=` en la petición. Las pruebas de triatlón se importan con las mismas columnas y se calculan en un ranking propio. Los títulos de algunos ficheros están mal puestos, por eso no se usan.
+- Los 5 parciales son carrera, T1, ciclismo, T2, carrera (duatlón) o natación, T1, ciclismo, T2, carrera (triatlón). La clasificación de una prueba los muestra con esos nombres según su deporte (una columna por segmento); el importador es el mismo para los dos deportes, solo cambia `deporte=` en la petición. Las pruebas de triatlón se importan con las mismas columnas y se calculan en un ranking propio. Los títulos de algunos ficheros están mal puestos, por eso no se usan.
 - El **atleta** se identifica por nombre normalizado + `NACIMIENTO` (el `ID` del Excel es de la prueba, no de la persona).
 - **Posición**: se usa `POSICION_FINAL`, el orden real de llegada. `POSICION` deja fuera a los invitados.
 - **Estado**: `DNF`, `DNS`, `DQ`/`DSQ` si lo indica la columna. Si no, un atleta con posición marcador (≥ 10000) o sin tiempo total no ha clasificado: con parciales es DNF y sin ellos DNS.
@@ -62,3 +62,11 @@ node scripts/importar.mjs --fecha 2026-02-15 --email admin@correo.es "ruta\al\ar
 ```
 
 Pide la contraseña (o la lee de `IMPORTAR_PASSWORD`). Opciones: `--url` (por defecto `http://localhost:3000`) y `--deporte`. Del nombre del archivo, con el formato de la descarga (`2449-5790_aguilas-duatlon_elite-masculino.xlsx`), deduce el identificador, el nombre, el deporte, la categoría y el sexo. La fecha hay que indicarla porque el nombre del archivo no la trae; usa un comando por cada fecha.
+
+## Mejor segmento y filtros en una prueba
+
+Al abrir una prueba en **Resultados** se ve:
+
+- **Mejor tiempo de cada segmento** (natación o carrera 1, T1, bici, T2, carrera): el tiempo y quién lo hizo (si hay empate, todos). Solo cuentan los finalistas con los 5 parciales completos y mayores que 0; abandonos y filas «para revisar» no entran. Lo calcula la API en `GET /api/pruebas/:id` (campo `mejoresSegmentos`, una posición por segmento, `null` si nadie tiene tiempo válido).
+- En la clasificación, la marca ★ señala el mejor tiempo de cada segmento.
+- **Filtros**: por atleta, por club (texto, sin importar tildes ni mayúsculas) y «Ordenar por» el mejor tiempo de natación/carrera 1, T1, bici, T2 o carrera (de menor a mayor; quien no tiene ese parcial va al final).
