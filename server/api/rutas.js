@@ -117,6 +117,11 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
     const { pagina, tamano, minPruebas, sexo } = req.query;
     res.status(200).json(await ranking.ranking(req.params.deporte, { pagina, tamano, minPruebas, sexo }));
   }));
+  // Ranking de clubes de un deporte (público, paginado): media del Elo de sus mejores atletas.
+  router.get("/ranking/:deporte/clubes", manejar(async (req, res) => {
+    const { pagina, tamano, sexo, mejores, minAtletas } = req.query;
+    res.status(200).json(await ranking.rankingClubes(req.params.deporte, { pagina, tamano, sexo, mejores, minAtletas }));
+  }));
   router.post("/ranking/:deporte/recalcular", exigirSesion, manejar(async (req, res) => {
     res.status(200).json(await ranking.recalcular(req.usuarioId, req.params.deporte));
   }));

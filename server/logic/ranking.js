@@ -6,6 +6,8 @@ import { DEPORTES, cuentaParaElo } from "./catalogos.js";
 import { RATING_INICIAL, actualizarCarrera } from "./elo.js";
 
 const TAMANO_MAXIMO = 100;
+const MEJORES_POR_DEFECTO = 5; // cuántos atletas de un club cuentan para su nota
+const MINIMO_ATLETAS_POR_DEFECTO = 3; // un club con menos atletas con ranking no aparece
 const SEXOS = ["M", "F"];
 
 function exigirDeporte(deporte) {
@@ -95,6 +97,45 @@ export function crearServicioRanking({ repos, usuarios, log = { info() {} } }) {
         };
       }));
       return { deporte, total: todos.length, pagina: p, tamano: t, filas };
+    },
+
+    // Ranking de clubes de un deporte: la nota de un club es la media del Elo de sus mejores atletas
+    // (por defecto los 5 mejores). Cada atleta cuenta en el club con el que corrió su última prueba.
+    // Los clubes con menos de `minAtletas` atletas con ranking no aparecen: así no gana un club
+    // con un solo atleta fuerte. Se calcula al consultar a partir del ranking de atletas ya recalculado.
+    async rankingClubes(deporte, { pagina, tamano, sexo, mejores, minAtletas } = {}) {
+      exigirDeporte(deporte);
+      if (sexo && !SEXOS.includes(sexo)) throw new ErrorLogica("DATOS_INVALIDOS", "El sexo debe ser M o F");
+      const p = entero(pagina, 1, "La página", 1);
+      const t = entero(tamano, 50, "El tamaño", 1, TAMANO_MAXIMO);
+      const cuentan = entero(mejores, MEJORES_POR_DEFECTO, "El número de mejores atletas", 1, 20);
+      const minimo = entero(minAtletas, MINIMO_ATLETAS_POR_DEFECTO, "El mínimo de atletas", 1);
+
+      const porClub = new Map(); // clubId -> ratings de sus atletas
+      for (const r of await repos.ratings.listar({ deporte })) {
+        if (!r.clubId || (sexo && r.sexo !== sexo)) continue;
+        porClub.set(r.clubId, [...(porClub.get(r.clubId) ?? []), r]);
+      }
+      const clubes = [];
+      for (const [clubId, atletas] of porClub) {
+        if (atletas.length < minimo) continue;
+        const top = atletas.sort((a, b) => b.rating - a.rating || a.atletaId.localeCompare(b.atletaId)).slice(0, cuentan);
+        clubes.push({ clubId, atletas: atletas.length, top, rating: top.reduce((suma, r) => suma + r.rating, 0) / top.length });
+      }
+      clubes.sort((a, b) => b.rating - a.rating || b.atletas - a.atletas || a.clubId.localeCompare(b.clubId));
+
+      const desde = (p - 1) * t;
+      const filas = await Promise.all(clubes.slice(desde, desde + t).map(async (c, i) => {
+        const club = await repos.clubes.buscarPorId(c.clubId);
+        return {
+          posicion: desde + i + 1,
+          club: { id: club.id, nombre: club.nombre },
+          rating: Math.round(c.rating),
+          atletas: c.atletas,
+          mejores: await Promise.all(c.top.map(async (r) => ({ id: r.atletaId, nombre: (await repos.atletas.buscarPorId(r.atletaId)).nombre, rating: Math.round(r.rating) }))),
+        };
+      }));
+      return { deporte, total: clubes.length, pagina: p, tamano: t, mejores: cuentan, minAtletas: minimo, filas };
     },
   };
 }

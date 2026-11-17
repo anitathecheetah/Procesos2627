@@ -24,6 +24,19 @@ El recálculo borra el ranking del deporte y lo reconstruye recorriendo las prue
 
 Hay que recalcular después de importar pruebas nuevas o cargar sanciones: ni la importación ni las sanciones lo hacen solas. El botón **Recalcular el ranking** de la página lo hace (solo administradores).
 
+## Ranking de clubes
+
+Cada club tiene una nota por deporte: la **media del Elo de sus mejores atletas** (por defecto los 5 mejores). Se mide la calidad del club y no el tamaño: un club con 50 atletas flojos no supera a uno con 5 muy buenos, y tampoco se premia a un club por tener muchos atletas.
+
+- Cada atleta cuenta en el club con el que corrió su **última prueba** del deporte (el que consta en su resultado), así que quien cambia de club al empezar la temporada puntúa para el nuevo.
+- Un club con menos de 3 atletas con ranking **no aparece** (`minAtletas`, por defecto 3), para que no gane un club con un solo atleta fuerte.
+- Se calcula al consultar, a partir del ranking de atletas ya recalculado: no hay que recalcular nada aparte. Hay que pulsar «Recalcular el ranking» después de importar, como siempre.
+- Se puede filtrar por sexo con el mismo criterio que el ranking de atletas.
+
+`GET /api/ranking/:deporte/clubes?pagina=1&tamano=50&sexo=M&mejores=5&minAtletas=3` (público). Devuelve por club su posición, nombre, nota (Elo medio), número de atletas con ranking y los atletas que cuentan para su nota. En la página se elige «Ver: Clubes».
+
+Pendiente (PBI-20.3): puntuar a los clubes con la clasificación por equipos de una liga. Hace falta el formato real de esa clasificación, que aún no se tiene.
+
 ## Historial
 
 Tras cada prueba se guarda el rating de antes y de después de cada atleta (`historialElo`). Aparece en su ficha (`GET /api/atletas/:id`, campo `elo`).
