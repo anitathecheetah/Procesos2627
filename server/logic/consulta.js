@@ -14,6 +14,25 @@ const resumenElo = (h) => (h ? {
   antes: Math.round(h.ratingAntes), despues: Math.round(h.ratingDespues), cambio: Math.round(h.ratingDespues - h.ratingAntes),
 } : null);
 
+const PARCIALES = 5;
+const esTiempoValido = (t) => typeof t === "number" && Number.isFinite(t) && t > 0;
+
+// Mejor tiempo de cada uno de los 5 segmentos de una prueba (posiciones 0..4 de los parciales).
+// Solo cuentan los finalistas con los 5 parciales completos; si hay empate se devuelven todos los atletas.
+// Un segmento sin ningún tiempo válido queda en null.
+export function mejoresSegmentos(clasificacion) {
+  return Array.from({ length: PARCIALES }, (_, i) => {
+    const validos = clasificacion.filter((f) =>
+      f.estado === ESTADOS_RESULTADO.FINALIZADO && Array.isArray(f.parciales) && f.parciales.length === PARCIALES && esTiempoValido(f.parciales[i]));
+    if (!validos.length) return null;
+    const tiempo = Math.min(...validos.map((f) => f.parciales[i]));
+    return {
+      tiempo,
+      atletas: validos.filter((f) => f.parciales[i] === tiempo).map((f) => ({ id: f.atleta.id, nombre: f.atleta.nombre, club: f.club?.nombre ?? null })),
+    };
+  });
+}
+
 function conCache(buscar) {
   const memoria = new Map();
   return async (id) => {
@@ -74,7 +93,7 @@ export function crearServicioConsulta({ repos }) {
         (x.posicion ?? Infinity) - (y.posicion ?? Infinity) ||
         String(x.dorsal).localeCompare(String(y.dorsal), "es", { numeric: true }),
       );
-      return { prueba, clasificacion };
+      return { prueba, clasificacion, mejoresSegmentos: mejoresSegmentos(clasificacion) };
     },
 
     // Búsqueda por nombre: todas las palabras escritas deben aparecer, sin importar tildes, mayúsculas ni el orden.

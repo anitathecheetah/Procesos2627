@@ -1,6 +1,7 @@
 // Presentación de resultados: solo construye el DOM. No hace peticiones (eso es api.js).
 // Todo el texto entra con textContent, nunca como HTML.
-import { describirParciales } from "./parciales.js";
+import { NOMBRES_PARCIALES } from "./parciales.js";
+import { filtrarClasificacion, esMejorSegmento } from "./filtrosResultados.js";
 import { textoElo } from "./elo.js";
 
 const DEPORTES = { duatlon: "Duatlón", triatlon: "Triatlón" };
@@ -101,28 +102,82 @@ function alternarVista(detalle) {
 }
 export const volverALaLista = () => alternarVista(null);
 
-export function mostrarDetallePrueba({ prueba, clasificacion }, { alElegirAtleta, alVolver }) {
-  const filas = clasificacion.map((f) => {
-    const estado = ESTADOS[f.estado];
-    const extras = [...(f.invitado ? ["invitado"] : []), ...f.sanciones.map(textoSancion)];
-    return [
-      f.estado === "finalizado" ? f.posicion : "—",
-      enlace(`${f.atleta.nombre}`, () => alElegirAtleta(f.atleta)),
-      f.club?.nombre ?? "",
-      f.dorsal,
-      f.estado === "finalizado" ? formatearTiempo(f.tiempoTotal) : estado,
-      describirParciales(prueba.deporte, f.parciales, formatearTiempo),
-      textoElo(f.elo),
-      extras.join(" · "),
-    ];
+const MARCA_MEJOR = "★";
+
+// Tabla de los mejores tiempos de cada segmento de la prueba.
+function tablaMejores(nombres, mejores, alElegirAtleta) {
+  const filas = nombres.map((nombre, i) => {
+    const m = mejores?.[i];
+    if (!m) return [nombre, "—", ""];
+    const quienes = el("span");
+    m.atletas.forEach((a, k) => {
+      if (k) quienes.append(", ");
+      quienes.append(enlace(a.nombre, () => alElegirAtleta({ id: a.id })));
+      if (a.club) quienes.append(el("span", ` (${a.club})`, { className: "suave" }));
+    });
+    return [nombre, formatearTiempo(m.tiempo), quienes];
   });
+  return tabla(["Segmento", "Mejor tiempo", "Atleta"], filas);
+}
+
+export function mostrarDetallePrueba({ prueba, clasificacion, mejoresSegmentos }, { alElegirAtleta, alVolver }) {
+  const nombres = NOMBRES_PARCIALES[prueba.deporte] ?? [];
+  const contenedor = el("div");
+  const filtros = el("form", undefined, { className: "filtros", noValidate: true });
+  const campo = (etiqueta, nombre, placeholder) => {
+    const l = el("label", etiqueta);
+    l.append(el("input", undefined, { name: nombre, placeholder, autocomplete: "off" }));
+    return l;
+  };
+  const ordenar = el("label", "Ordenar por");
+  const selector = el("select", undefined, { name: "orden" });
+  selector.append(el("option", "Posición", { value: "posicion" }));
+  nombres.forEach((n, i) => selector.append(el("option", `Mejor tiempo de ${n}`, { value: String(i) })));
+  ordenar.append(selector);
+  filtros.append(campo("Atleta", "atleta", "Nombre o apellidos"), campo("Club", "club", "Nombre del club"), ordenar);
+  filtros.addEventListener("submit", (e) => e.preventDefault());
+
+  const pintar = () => {
+    const f = Object.fromEntries(new FormData(filtros));
+    const visibles = filtrarClasificacion(clasificacion, f);
+    const filas = visibles.map((fila) => {
+      const estado = ESTADOS[fila.estado];
+      const extras = [...(fila.invitado ? ["invitado"] : []), ...fila.sanciones.map(textoSancion)];
+      const tiempos = nombres.map((_, i) => {
+        const t = fila.estado === "finalizado" && Array.isArray(fila.parciales) && fila.parciales.length === nombres.length ? fila.parciales[i] : null;
+        if (t === null) return "";
+        return esMejorSegmento(mejoresSegmentos, i, fila) ? `${formatearTiempo(t)} ${MARCA_MEJOR}` : formatearTiempo(t);
+      });
+      return [
+        fila.estado === "finalizado" ? fila.posicion : "—",
+        enlace(fila.atleta.nombre, () => alElegirAtleta(fila.atleta)),
+        fila.club?.nombre ?? "",
+        fila.dorsal,
+        fila.estado === "finalizado" ? formatearTiempo(fila.tiempoTotal) : estado,
+        ...tiempos,
+        textoElo(fila.elo),
+        extras.join(" · "),
+      ];
+    });
+    contenedor.replaceChildren(
+      el("p", `${visibles.length} de ${clasificacion.length} resultados`, { className: "suave" }),
+      tabla(["Pos.", "Atleta", "Club", "Dorsal", "Tiempo", ...nombres, "Elo", "Notas"], filas),
+    );
+  };
+  filtros.addEventListener("input", pintar);
+
   alternarVista([
     enlace("← Volver", alVolver),
     el("h3", prueba.nombre),
     el("p", `${formatearFecha(prueba.fecha)} · ${DEPORTES[prueba.deporte] ?? prueba.deporte}${prueba.categoria ? ` · ${prueba.categoria}` : ""}`, { className: "suave" }),
-    el("p", "Elo: puntos del atleta antes de la prueba → después, y lo que ganó o perdió. Sale al recalcular el ranking del deporte; quien no termina no puntúa.", { className: "suave" }),
-    tabla(["Pos.", "Atleta", "Club", "Dorsal", "Tiempo", "Parciales", "Elo", "Notas"], filas),
+    el("h4", "Mejor tiempo de cada segmento"),
+    tablaMejores(nombres, mejoresSegmentos, alElegirAtleta),
+    el("h4", "Clasificación"),
+    el("p", `${MARCA_MEJOR} marca el mejor tiempo del segmento. Elo: puntos del atleta antes de la prueba → después, y lo que ganó o perdió. Sale al recalcular el ranking del deporte; quien no termina no puntúa.`, { className: "suave" }),
+    filtros,
+    contenedor,
   ]);
+  pintar();
 }
 
 export function mostrarFichaAtleta({ atleta, clubes, resultados, elo = [] }, { alElegirPrueba, alVolver }) {
