@@ -46,3 +46,6 @@ button.enlace, td button.enlace { padding: 0; background: none; border: 0; color
 
 .filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.5rem 1rem; margin: 0.5rem 0; }
 .filtros label { margin-bottom: 0; }
+#zona-prediccion { margin-bottom: 1rem; }
+.casilla { display: flex; gap: .5rem; align-items: center; }
+.casilla input { display: inline-block; width: auto; margin: 0; }

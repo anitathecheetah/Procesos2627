@@ -57,3 +57,14 @@ export const ranking = (deporte, sexo, pagina = 1) =>
 export const rankingClubes = (deporte, sexo, pagina = 1) =>
   peticion("GET", `/ranking/${encodeURIComponent(deporte)}/clubes?pagina=${pagina}&tamano=25${sexo ? `&sexo=${sexo}` : ""}`);
 export const recalcularRanking = (deporte) => peticion("POST", `/ranking/${encodeURIComponent(deporte)}/recalcular`);
+
+// --- Predicción de una carrera ---
+// opciones: { base (id de prueba), sexo, retrospectiva }
+export const prediccion = (deporte, { base, sexo, retrospectiva } = {}) => {
+  const params = new URLSearchParams();
+  if (base) params.set("base", base);
+  else if (sexo) params.set("sexo", sexo);
+  if (base && retrospectiva) params.set("retrospectiva", "true");
+  const consulta = params.toString();
+  return peticion("GET", `/prediccion/${encodeURIComponent(deporte)}${consulta ? `?${consulta}` : ""}`);
+};

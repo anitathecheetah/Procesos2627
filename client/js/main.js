@@ -5,6 +5,7 @@ import {
   alPulsarEliminarCuenta, confirmar, mostrarAdministracion, mostrarAvisoAdmin,
 } from "./ui.js";
 import "./resultados.js";
+import "./prediccion.js";
 import { mostrarBotonRecalcular } from "./ranking.js";
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

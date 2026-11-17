@@ -29,7 +29,7 @@ const manejar = (fn) => async (req, res, next) => {
   }
 };
 
-export function crearRutasApi({ usuarios, importacion, sanciones, consulta, ranking, sesiones, secreto, produccion = false }) {
+export function crearRutasApi({ usuarios, importacion, sanciones, consulta, ranking, prediccion, sesiones, secreto, produccion = false }) {
   const router = Router();
   const opcionesCookie = { maxAgeSegundos: Math.floor(sesiones.duracionMs / 1000), seguro: produccion };
 
@@ -127,6 +127,12 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
   router.get("/ranking/:deporte/clubes", manejar(async (req, res) => {
     const { pagina, tamano, sexo, mejores, minAtletas } = req.query;
     res.status(200).json(await ranking.rankingClubes(req.params.deporte, { pagina, tamano, sexo, mejores, minAtletas }));
+  }));
+  // Predicción de una carrera a partir del Elo (pública). base = prueba anterior cuyos participantes forman la
+  // lista de salida; retrospectiva=true usa el Elo de antes de esa prueba y añade el resultado real.
+  router.get("/prediccion/:deporte", manejar(async (req, res) => {
+    const { base, sexo, maximo, simulaciones, retrospectiva } = req.query;
+    res.status(200).json(await prediccion.predecir(req.params.deporte, { base, sexo, maximo, simulaciones, retrospectiva }));
   }));
   router.post("/ranking/:deporte/recalcular", exigirSesion, manejar(async (req, res) => {
     res.status(200).json(await ranking.recalcular(req.usuarioId, req.params.deporte));
