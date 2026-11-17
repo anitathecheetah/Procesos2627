@@ -78,3 +78,24 @@ test("sanciones: el administrador sube el CSV del acta y se ven en la prueba; er
     assert.equal((await fetch(`${url}/api/pruebas/nada/sanciones`)).status, 404);
   } finally { cerrar(); }
 });
+
+test("la importación excluye a los posibles menores por defecto y soloMayores=false los admite", async () => {
+  const { url, entrar, cerrar } = await arrancar();
+  try {
+    const admin = await entrar("admin@correo.es");
+    const subir = async (id, extra = "") => (await fetch(`${url}/api/pruebas/importar?idExterno=${id}&nombre=P&deporte=duatlon&fecha=2026-03-01${extra}`, {
+      method: "POST", headers: { Cookie: admin, "Content-Type": "application/octet-stream" },
+      body: await crearExcel([finalista("Ana López", 1995, "Club Uno", 1, 1, "00:52:00"), finalista("Joven Promesa", 2011, "Club Uno", 2, 2, "00:53:00")]),
+    }));
+    const porDefecto = await subir("1");
+    assert.equal(porDefecto.status, 201);
+    const datos = await porDefecto.json();
+    assert.equal(datos.importados, 1);
+    assert.equal(datos.menoresExcluidos, 1);
+    assert.doesNotMatch(JSON.stringify(datos), /Joven Promesa/);
+
+    const permitido = await (await subir("2", "&soloMayores=false")).json();
+    assert.equal(permitido.importados, 2);
+    assert.equal(permitido.menoresExcluidos, 0);
+  } finally { cerrar(); }
+});

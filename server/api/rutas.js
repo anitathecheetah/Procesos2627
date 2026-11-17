@@ -135,8 +135,10 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
   // Importar una clasificación en Excel (solo admin). El archivo va como cuerpo de la petición
   // (.xlsx en binario) y los datos de la prueba en la query: idExterno, nombre, deporte, tipo, fecha, categoria, sexo.
   router.post("/pruebas/importar", exigirSesion, express.raw({ type: () => true, limit: "10mb" }), manejar(async (req, res) => {
-    const { idExterno, nombre, deporte, tipo, fecha, categoria, sexo } = req.query;
-    const resumen = await importacion.importar(req.usuarioId, { idExterno, nombre, deporte, tipo, fecha, categoria, sexo }, req.body);
+    const { idExterno, nombre, deporte, tipo, fecha, categoria, sexo, soloMayores } = req.query;
+    // Por defecto no se importan posibles menores de edad; soloMayores=false lo permite expresamente.
+    const resumen = await importacion.importar(
+      req.usuarioId, { idExterno, nombre, deporte, tipo, fecha, categoria, sexo, soloMayores: soloMayores !== "false" }, req.body);
     res.status(201).json(resumen);
   }));
 
