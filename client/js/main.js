@@ -1,5 +1,5 @@
 // Punto de entrada del frontend: conecta la interfaz (ui.js) con el cliente de API (api.js).
-import { salud, registrar, iniciarSesion, sesionActual, cerrarSesion, listarUsuarios, eliminarUsuario } from "./api.js";
+import { salud, registrar, iniciarSesion, sesionActual, cerrarSesion, listarUsuarios, eliminarUsuario, cambiarPassword } from "./api.js";
 import {
   mostrarEstado, mostrarMensaje, alEnviar, mostrarSesion, alPulsarSalir,
   alPulsarEliminarCuenta, confirmar, mostrarAdministracion, mostrarAvisoAdmin,
@@ -80,6 +80,18 @@ alEnviar(document.getElementById("form-login"), async (datos, formulario) => {
     mostrarMensaje("", true, formulario);
     mostrarMensaje("", true); // limpia avisos antiguos (p. ej. "Email confirmado")
     await mostrarSesionCompleta(usuario);
+  } catch (error) {
+    mostrarMensaje(textoDeError(error), false, formulario);
+  }
+});
+
+alEnviar(document.getElementById("form-password"), async (datos, formulario) => {
+  if (!datos.actual || !datos.nueva) return mostrarMensaje("Escribe la contraseña actual y la nueva.", false, formulario);
+  if (datos.nueva !== datos.repetida) return mostrarMensaje("Las contraseñas nuevas no coinciden.", false, formulario);
+  try {
+    await cambiarPassword({ actual: datos.actual, nueva: datos.nueva });
+    formulario.reset();
+    mostrarMensaje("Contraseña cambiada.", true, formulario);
   } catch (error) {
     mostrarMensaje(textoDeError(error), false, formulario);
   }

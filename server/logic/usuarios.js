@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { ErrorLogica } from "./errores.js";
 import { ROL_ADMIN, ROL_USUARIO } from "./roles.js";
 import { loggerSilencioso } from "../logger.js";
+import { validarPassword } from "./politicaPassword.js";
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -12,6 +13,13 @@ function publico({ id, nombre, email, rol, estado }) {
 }
 
 const LONGITUD_MINIMA_PASSWORD = 8;
+
+// Textos de la política (politicaPassword.js) para el cambio de contraseña.
+const MENSAJE_POLITICA = {
+  LONGITUD: "mínimo 10 caracteres",
+  DIGITO: "al menos un número",
+  MAYUSCULA: "al menos una mayúscula",
+};
 
 // cifrador: { cifrar(texto) -> hash, comparar(texto, hash) -> boolean } (bcrypt en producción).
 // notificar(usuario, token): avisa al usuario para que confirme su email.
@@ -115,6 +123,28 @@ export function crearServicioUsuarios(repositorio, { cifrador, notificar = () =>
     // Para otros servicios: corta con 401/403 si el solicitante no es un administrador identificado.
     async exigirAdministrador(solicitanteId) {
       await exigirAdmin(repositorio, solicitanteId);
+    },
+
+    // Cambio de contraseña del propio usuario: exige la actual y que la nueva cumpla la política.
+    async cambiarPassword(solicitanteId, { actual, nueva } = {}) {
+      const usuario = await identificar(repositorio, solicitanteId);
+      if (typeof actual !== "string" || typeof nueva !== "string" || actual === "" || nueva === "") {
+        throw new ErrorLogica("DATOS_INVALIDOS", "Escribe la contraseña actual y la nueva");
+      }
+      if (!usuario.hash || !(await cifrador.comparar(actual, usuario.hash))) {
+        log.warn("Cambio de contraseña rechazado: la actual no coincide", { id: usuario.id });
+        throw new ErrorLogica("DATOS_INVALIDOS", "La contraseña actual no es correcta");
+      }
+      const { errores } = validarPassword(nueva);
+      if (errores.length) {
+        const faltas = errores.map((e) => MENSAJE_POLITICA[e]).join(", ");
+        throw new ErrorLogica("DATOS_INVALIDOS", `La contraseña nueva no cumple la política: ${faltas}`);
+      }
+      if (nueva === actual) {
+        throw new ErrorLogica("DATOS_INVALIDOS", "La contraseña nueva debe ser distinta de la actual");
+      }
+      await repositorio.actualizar({ ...usuario, hash: await cifrador.cifrar(nueva) });
+      log.info("Contraseña cambiada", { id: usuario.id });
     },
 
     // Eliminación lógica: la puede hacer un administrador o el propio usuario.

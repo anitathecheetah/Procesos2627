@@ -92,6 +92,12 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
     res.status(200).json(await usuarios.usuarioActivo(req.usuarioId, req.params.id));
   }));
 
+  // Cambiar la contraseña propia: { actual, nueva }. Exige sesión; "yo" es el usuario de la sesión.
+  router.put("/usuarios/yo/password", exigirSesion, manejar(async (req, res) => {
+    await usuarios.cambiarPassword(req.usuarioId, req.body ?? {});
+    res.status(204).end();
+  }));
+
   // Eliminar un usuario (admin o el propio usuario). Eliminación lógica.
   router.delete("/usuarios/:id", exigirSesion, manejar(async (req, res) => {
     await usuarios.eliminar(req.usuarioId, req.params.id);

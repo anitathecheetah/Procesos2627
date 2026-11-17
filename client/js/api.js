@@ -43,6 +43,7 @@ export const sesionActual = () => peticion("GET", "/sesion");
 export const cerrarSesion = () => peticion("DELETE", "/sesion");
 export const listarUsuarios = () => peticion("GET", "/usuarios");
 export const eliminarUsuario = (id) => peticion("DELETE", `/usuarios/${id}`);
+export const cambiarPassword = (datos) => peticion("PUT", "/usuarios/yo/password", datos);
 
 // --- Resultados (consultas públicas) ---
 export const listarPruebas = (deporte) => peticion("GET", `/pruebas${deporte ? `?deporte=${encodeURIComponent(deporte)}` : ""}`);

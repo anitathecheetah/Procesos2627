@@ -86,6 +86,10 @@ El administrador no tiene contraseña por defecto. Se define con la variable `AD
 2. Regístrate en la aplicación con ese email y confirma el enlace recibido (en local aparece en el log del servidor). Si ya estabas registrada, el administrador se asigna al arrancar el servidor; hacerlo varias veces no cambia nada.
 3. Al iniciar sesión verás el panel «Administración de usuarios» con el listado y el botón de eliminar.
 
+## Cambiar la contraseña
+
+Con la sesión iniciada, la tarjeta «Sesión iniciada» tiene el formulario «Cambiar contraseña». Pide la contraseña actual y la nueva dos veces. La nueva debe tener al menos 10 caracteres, un número y una mayúscula y ser distinta de la actual. La API es `PUT /api/usuarios/yo/password` con `{ "actual": "…", "nueva": "…" }` y responde 204; si algo falla responde 400 `{ error, codigo }` y no cambia nada. La contraseña se guarda cifrada (bcrypt) y nunca aparece en el log. Es la forma de sustituir una contraseña débil o que se haya compartido, también la del administrador.
+
 ## Secretos
 
 Ningún secreto está en el código ni en el historial de git: se comprobó buscando cadenas de conexión, contraseñas y archivos `.env` en todos los commits. `.env` está en `.gitignore` y solo se versiona `.env.example` (con los nombres). Los secretos son `MONGODB_URI` y `SECRETO_SESION`. Si alguno se publica por error, hay que **cambiarlo** (nueva contraseña del usuario de Atlas, nuevo secreto de sesión), no solo borrarlo del repositorio.
