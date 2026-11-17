@@ -142,6 +142,11 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
     res.status(201).json(resumen);
   }));
 
+  // Eliminar una prueba con sus resultados (solo admin). Hay que recalcular el ranking del deporte después.
+  router.delete("/pruebas/:id", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await importacion.eliminarPrueba(req.usuarioId, req.params.id));
+  }));
+
   // Cargar las sanciones del acta (solo admin). Cuerpo: CSV de texto (dorsal;accion1;infraccion1;…;observaciones)
   // o JSON { sanciones: [{ dorsal, pares: [{accion, infraccion}], observaciones }] }.
   router.post("/pruebas/:id/sanciones", exigirSesion, express.text({ type: ["text/*"], limit: "1mb" }), manejar(async (req, res) => {

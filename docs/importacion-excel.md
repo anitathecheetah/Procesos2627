@@ -20,6 +20,14 @@ Las clasificaciones de la federación incluyen a menores. **Por defecto no se im
 
 Para incluirlos hay que pedirlo expresamente: `soloMayores=false` en la petición o `--menores incluir` en el script. No debe hacerse con datos reales sin permiso de la federación.
 
+## Eliminar una prueba
+
+`DELETE /api/pruebas/:id` (solo administradores; 401 sin sesión, 403 si no es administrador, 404 si no existe) elimina la prueba con sus resultados, sanciones y el historial de Elo que generó. Los atletas y clubes que se quedan **sin ninguna otra prueba** también se eliminan, con su rating; quien sigue en otras pruebas se conserva. Responde `{ eliminada, idExterno, deporte, resultados, atletasEliminados, clubesEliminados }`. No se puede deshacer, pero la prueba se puede volver a importar con el mismo `idExterno`.
+
+Después hay que **recalcular el ranking** de ese deporte, para que quienes siguen no conserven puntos de la prueba eliminada.
+
+Script: `node scripts/borrar-pruebas.mjs --url <app> --email <admin> <idExterno> [<idExterno> …]`. Enseña qué pruebas va a eliminar y pide escribir `si` antes de borrar nada.
+
 ## Estructura del Excel
 
 Columnas: `EVENTO, PHASE, ID, NOMBRE, AÑO, CLUB, FEDERACION, DORSAL, NACIMIENTO, 5 parciales, POSICION, POSICION_FINAL, ESTADO, TIEMPO` (más columnas a la derecha, que se ignoran). Se localizan por el nombre de la cabecera.
