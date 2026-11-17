@@ -18,7 +18,7 @@ Ejemplo: `curl -X POST -b cookie.txt --data-binary @resultados.xlsx -H "Content-
 
 Columnas: `EVENTO, PHASE, ID, NOMBRE, AÑO, CLUB, FEDERACION, DORSAL, NACIMIENTO, 5 parciales, POSICION, POSICION_FINAL, ESTADO, TIEMPO` (más columnas a la derecha, que se ignoran). Se localizan por el nombre de la cabecera.
 
-- Los 5 parciales son carrera, T1, ciclismo, T2, carrera (duatlón) o natación, T1, ciclismo, T2, carrera (triatlón). Los títulos de algunos ficheros están mal puestos, por eso no se usan.
+- Los 5 parciales son carrera, T1, ciclismo, T2, carrera (duatlón) o natación, T1, ciclismo, T2, carrera (triatlón). La clasificación de una prueba los muestra con esos nombres según su deporte (columna «Parciales»); el importador es el mismo para los dos deportes, solo cambia `deporte=` en la petición. Las pruebas de triatlón se importan con las mismas columnas y se calculan en un ranking propio. Los títulos de algunos ficheros están mal puestos, por eso no se usan.
 - El **atleta** se identifica por nombre normalizado + `NACIMIENTO` (el `ID` del Excel es de la prueba, no de la persona).
 - **Posición**: se usa `POSICION_FINAL`, el orden real de llegada. `POSICION` deja fuera a los invitados.
 - **Estado**: `DNF`, `DNS`, `DQ`/`DSQ` si lo indica la columna. Si no, un atleta con posición marcador (≥ 10000) o sin tiempo total no ha clasificado: con parciales es DNF y sin ellos DNS.
