@@ -20,7 +20,7 @@ export const INDICES_DOMINIO = Object.fromEntries(
     resultados: [{ campos: ["atletaId"] }, { campos: ["pruebaId", "posicion"] }],
     sanciones: [{ campos: ["pruebaId", "dorsal"] }],
     ratings: [{ campos: ["deporte", "rating"] }],
-    historialElo: [{ campos: ["atletaId", "fecha"] }],
+    historialElo: [{ campos: ["atletaId", "fecha"] }, { campos: ["pruebaId"] }],
   }).map(([nombre, extra]) => [
     nombre,
     [...UNICOS_DOMINIO[nombre].map((campos) => ({ campos, unico: true })), ...extra],
