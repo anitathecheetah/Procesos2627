@@ -1,5 +1,6 @@
 // Presentación de resultados: solo construye el DOM. No hace peticiones (eso es api.js).
 // Todo el texto entra con textContent, nunca como HTML.
+import { describirParciales } from "./parciales.js";
 
 const DEPORTES = { duatlon: "Duatlón", triatlon: "Triatlón" };
 const ESTADOS = { finalizado: "", dnf: "DNF", dns: "DNS", dq: "Descalificado" };
@@ -109,6 +110,7 @@ export function mostrarDetallePrueba({ prueba, clasificacion }, { alElegirAtleta
       f.club?.nombre ?? "",
       f.dorsal,
       f.estado === "finalizado" ? formatearTiempo(f.tiempoTotal) : estado,
+      describirParciales(prueba.deporte, f.parciales, formatearTiempo),
       extras.join(" · "),
     ];
   });
@@ -116,7 +118,7 @@ export function mostrarDetallePrueba({ prueba, clasificacion }, { alElegirAtleta
     enlace("← Volver", alVolver),
     el("h3", prueba.nombre),
     el("p", `${formatearFecha(prueba.fecha)} · ${DEPORTES[prueba.deporte] ?? prueba.deporte}${prueba.categoria ? ` · ${prueba.categoria}` : ""}`, { className: "suave" }),
-    tabla(["Pos.", "Atleta", "Club", "Dorsal", "Tiempo", "Notas"], filas),
+    tabla(["Pos.", "Atleta", "Club", "Dorsal", "Tiempo", "Parciales", "Notas"], filas),
   ]);
 }
 
