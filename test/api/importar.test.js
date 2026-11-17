@@ -99,3 +99,24 @@ test("la importación excluye a los posibles menores por defecto y soloMayores=f
     assert.equal(permitido.menoresExcluidos, 0);
   } finally { cerrar(); }
 });
+
+test("DELETE /api/pruebas/:id: el administrador elimina la prueba; sin sesión 401, usuario normal 403, inexistente 404", async () => {
+  const { url, entrar, cerrar } = await arrancar();
+  try {
+    const admin = await entrar("admin@correo.es");
+    const importada = await (await fetch(`${url}/api/pruebas/importar?${consulta}`, {
+      method: "POST", headers: { Cookie: admin, "Content-Type": "application/octet-stream" },
+      body: await crearExcel([finalista("Ana López", 1995, "Club Uno", 1, 1, "00:52:00"), finalista("Beto Ruiz", 1990, "Club Dos", 2, 2, "00:53:00")]),
+    })).json();
+    const id = importada.prueba.id;
+
+    assert.equal((await fetch(`${url}/api/pruebas/${id}`, { method: "DELETE" })).status, 401);
+    assert.equal((await fetch(`${url}/api/pruebas/${id}`, { method: "DELETE", headers: { Cookie: await entrar("user@correo.es") } })).status, 403);
+
+    const r = await fetch(`${url}/api/pruebas/${id}`, { method: "DELETE", headers: { Cookie: admin } });
+    assert.equal(r.status, 200);
+    assert.deepEqual(await r.json(), { eliminada: id, idExterno: "9-9", deporte: "duatlon", resultados: 2, atletasEliminados: 2, clubesEliminados: 2 });
+    assert.equal((await fetch(`${url}/api/pruebas/${id}`)).status, 404);
+    assert.equal((await fetch(`${url}/api/pruebas/${id}`, { method: "DELETE", headers: { Cookie: admin } })).status, 404);
+  } finally { cerrar(); }
+});

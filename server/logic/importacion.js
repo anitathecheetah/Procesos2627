@@ -96,5 +96,39 @@ export function crearServicioImportacion({ repos, dominio, usuarios, log = { inf
       log.info("Prueba importada", { prueba: prueba.id, importados, descartados: descartadas.length, menoresExcluidos });
       return { prueba, importados, menoresExcluidos, descartadas, revisar };
     },
+
+    // Elimina una prueba con sus resultados y sanciones (solo administradores). Los atletas y clubes que se
+    // quedan sin ninguna otra prueba también se eliminan, con su rating e historial. Después hay que
+    // recalcular el ranking del deporte para que los atletas que siguen no conserven puntos de esta prueba.
+    async eliminarPrueba(solicitanteId, id) {
+      await usuarios.exigirAdministrador(solicitanteId);
+      const prueba = await repos.pruebas.buscarPorId(id);
+      if (!prueba) throw new ErrorLogica("NO_ENCONTRADO", "La prueba no existe");
+
+      const resultados = await repos.resultados.listar({ pruebaId: id });
+      await repos.sanciones.eliminarPor({ pruebaId: id });
+      await repos.historialElo.eliminarPor({ pruebaId: id });
+      await repos.resultados.eliminarPor({ pruebaId: id });
+      await repos.pruebas.eliminar(id);
+
+      let atletasEliminados = 0;
+      for (const atletaId of new Set(resultados.map((r) => r.atletaId))) {
+        if ((await repos.resultados.listar({ atletaId })).length) continue; // sigue en otras pruebas
+        await repos.ratings.eliminarPor({ atletaId });
+        await repos.historialElo.eliminarPor({ atletaId });
+        await repos.pertenencias.eliminarPor({ atletaId });
+        await repos.atletas.eliminar(atletaId);
+        atletasEliminados++;
+      }
+      let clubesEliminados = 0;
+      for (const clubId of new Set(resultados.map((r) => r.clubId).filter(Boolean))) {
+        const enUso = (await repos.resultados.listar({ clubId })).length || (await repos.pertenencias.listar({ clubId })).length;
+        if (enUso) continue;
+        await repos.clubes.eliminar(clubId);
+        clubesEliminados++;
+      }
+      log.info("Prueba eliminada", { prueba: id, resultados: resultados.length, atletasEliminados, clubesEliminados });
+      return { eliminada: id, idExterno: prueba.idExterno, deporte: prueba.deporte, resultados: resultados.length, atletasEliminados, clubesEliminados };
+    },
   };
 }
