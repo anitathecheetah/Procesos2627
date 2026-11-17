@@ -58,7 +58,7 @@ function preparar() {
   const importar = async (idExterno, fecha, nombres, extra = {}) =>
     (await importacion.importar("a", { idExterno, nombre: `Prueba ${idExterno}`, deporte: "duatlon", fecha, ...extra },
       await crearExcel(nombres.map((n, i) => finalista(n, 1990 + (n.charCodeAt(0) % 9), "Club Uno", i + 1, i + 1, `00:5${i + 1}:00`))))).prueba;
-  return { importar, ranking: crearServicioRanking({ repos, usuarios: admin }), prediccion: crearServicioPrediccion({ repos }) };
+  return { importar, importacion, ranking: crearServicioRanking({ repos, usuarios: admin }), prediccion: crearServicioPrediccion({ repos }) };
 }
 const NOMBRES = ["Ana Uno", "Beto Dos", "Carla Tres", "Dani Cuatro", "Eva Cinco", "Fran Seis"];
 
@@ -76,6 +76,16 @@ test("con una prueba base, la lista de salida son sus participantes y el favorit
   assert.ok(r.filas[0].probVictoria > r.filas[5].probVictoria);
   assert.equal(r.filas[0].club.nombre, "Club Uno");
   assert.ok(!("posicionReal" in r.filas[0]));
+});
+
+test("con una prueba base se predice a TODOS los participantes, también con más atletas que el máximo por defecto", async () => {
+  const { importacion, ranking, prediccion } = preparar();
+  const filas = Array.from({ length: 120 }, (_, i) =>
+    finalista(`Atleta${String(i).padStart(3, "0")} Apellido`, 1990, "Club", i + 1, i + 1, `01:${String(Math.floor(i / 60)).padStart(2, "0")}:${String(i % 60).padStart(2, "0")}`));
+  const base = (await importacion.importar("a", { idExterno: "1", nombre: "Grande", deporte: "duatlon", fecha: "2026-02-01", sexo: "M" }, await crearExcel(filas))).prueba;
+  await ranking.recalcular("a", "duatlon");
+  const r = await prediccion.predecir("duatlon", { base: base.id, maximo: "5", simulaciones: "200" });
+  assert.equal(r.filas.length, 120, "el máximo solo se aplica sin prueba base");
 });
 
 test("sin base usa los mejores del ranking, filtra por sexo y respeta el máximo", async () => {

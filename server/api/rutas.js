@@ -29,7 +29,7 @@ const manejar = (fn) => async (req, res, next) => {
   }
 };
 
-export function crearRutasApi({ usuarios, importacion, sanciones, consulta, ranking, prediccion, sesiones, secreto, produccion = false }) {
+export function crearRutasApi({ usuarios, importacion, sanciones, consulta, ranking, prediccion, convocatorias, sesiones, secreto, produccion = false }) {
   const router = Router();
   const opcionesCookie = { maxAgeSegundos: Math.floor(sesiones.duracionMs / 1000), seguro: produccion };
 
@@ -102,6 +102,38 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
   router.delete("/usuarios/:id", exigirSesion, manejar(async (req, res) => {
     await usuarios.eliminar(req.usuarioId, req.params.id);
     res.status(204).end();
+  }));
+
+  // Próximas carreras (PBI-37/38). Listado público (con `apuntado` si hay sesión); el resto exige sesión.
+  router.get("/convocatorias", manejar(async (req, res) => {
+    res.status(200).json(await convocatorias.listar({ usuarioId: req.usuarioId }));
+  }));
+  // Crear una carrera (solo admin): { nombre, deporte, fecha (AAAA-MM-DD), lugar }.
+  router.post("/convocatorias", exigirSesion, manejar(async (req, res) => {
+    res.status(201).json(await convocatorias.crear(req.usuarioId, req.body ?? {}));
+  }));
+  router.delete("/convocatorias/:id", exigirSesion, manejar(async (req, res) => {
+    await convocatorias.eliminar(req.usuarioId, req.params.id);
+    res.status(204).end();
+  }));
+  // Apuntarse y desapuntarse: el usuario de la sesión.
+  router.put("/convocatorias/:id/inscripcion", exigirSesion, manejar(async (req, res) => {
+    await convocatorias.apuntarse(req.usuarioId, req.params.id);
+    res.status(204).end();
+  }));
+  router.delete("/convocatorias/:id/inscripcion", exigirSesion, manejar(async (req, res) => {
+    await convocatorias.desapuntarse(req.usuarioId, req.params.id);
+    res.status(204).end();
+  }));
+  // Solo admin: quiénes se han apuntado, vincular el listado real (prueba importada) y ver la asistencia.
+  router.get("/convocatorias/:id/inscripciones", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await convocatorias.apuntados(req.usuarioId, req.params.id));
+  }));
+  router.put("/convocatorias/:id/listado", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await convocatorias.vincularListado(req.usuarioId, req.params.id, req.body?.pruebaId));
+  }));
+  router.get("/convocatorias/:id/asistencia", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await convocatorias.asistencia(req.usuarioId, req.params.id));
   }));
 
   // Consultas públicas (como la web de resultados): no exigen sesión.

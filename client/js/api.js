@@ -68,3 +68,13 @@ export const prediccion = (deporte, { base, sexo, retrospectiva } = {}) => {
   const consulta = params.toString();
   return peticion("GET", `/prediccion/${encodeURIComponent(deporte)}${consulta ? `?${consulta}` : ""}`);
 };
+
+// --- Próximas carreras e inscripciones ---
+export const listarConvocatorias = () => peticion("GET", "/convocatorias");
+export const crearConvocatoria = (datos) => peticion("POST", "/convocatorias", datos);
+export const eliminarConvocatoria = (id) => peticion("DELETE", `/convocatorias/${encodeURIComponent(id)}`);
+export const apuntarse = (id) => peticion("PUT", `/convocatorias/${encodeURIComponent(id)}/inscripcion`);
+export const desapuntarse = (id) => peticion("DELETE", `/convocatorias/${encodeURIComponent(id)}/inscripcion`);
+export const apuntadosDe = (id) => peticion("GET", `/convocatorias/${encodeURIComponent(id)}/inscripciones`);
+export const vincularListado = (id, pruebaId) => peticion("PUT", `/convocatorias/${encodeURIComponent(id)}/listado`, { pruebaId });
+export const asistenciaDe = (id) => peticion("GET", `/convocatorias/${encodeURIComponent(id)}/asistencia`);

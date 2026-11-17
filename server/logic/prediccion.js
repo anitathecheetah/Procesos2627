@@ -10,8 +10,9 @@ import { DEPORTES, ESTADOS_RESULTADO } from "./catalogos.js";
 
 export const SIMULACIONES_POR_DEFECTO = 5000;
 export const SIMULACIONES_MAXIMAS = 20000;
-export const ATLETAS_POR_DEFECTO = 30;
-export const ATLETAS_MAXIMOS = 150;
+export const ATLETAS_POR_DEFECTO = 100; // solo sin prueba base: cuántos del ranking
+export const ATLETAS_MAXIMOS = 300;
+const ATLETAS_MAXIMOS_BASE = 500; // con prueba base entran todos los participantes; esto solo protege al servidor
 const SEMILLA = 2027;
 const ESCALA_GUMBEL = 400 / Math.LN10;
 
@@ -75,7 +76,8 @@ export function crearServicioPrediccion({ repos }) {
   return {
     // Predice la clasificación de una carrera de `deporte`.
     //  - base: id de una prueba anterior; sus participantes son la lista de salida (p. ej. Águilas 2026).
-    //    Sin base, la lista de salida son los `maximo` mejores del ranking (filtrados por `sexo`).
+    //    Con base entran TODOS los participantes (no se recorta la lista).
+    //    Sin base, la lista de salida son los `maximo` mejores del ranking (filtrados por `sexo`): es solo una aproximación.
     //  - retrospectiva (solo con base): usa el Elo que tenía cada atleta ANTES de esa prueba y añade el
     //    resultado real, para comparar la predicción con lo que pasó.
     // El Elo sale del último recálculo del ranking.
@@ -104,7 +106,7 @@ export function crearServicioPrediccion({ repos }) {
           .map((r) => ({ atletaId: r.atletaId, rating: r.rating, clubId: r.clubId, real: null }));
       }
       candidatos.sort((a, b) => b.rating - a.rating || a.atletaId.localeCompare(b.atletaId));
-      candidatos = candidatos.slice(0, tope);
+      candidatos = candidatos.slice(0, base ? ATLETAS_MAXIMOS_BASE : tope);
 
       const estadisticas = simular(candidatos.map((c) => ({ id: c.atletaId, rating: c.rating })), { simulaciones: sims });
       const filas = await Promise.all(candidatos.map(async (c, i) => {

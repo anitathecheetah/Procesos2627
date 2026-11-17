@@ -8,7 +8,7 @@ const normalizar = (t) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase(
 // Si hay una prueba de Águilas, se deja elegida la más reciente (pruebas llega con las más recientes primero).
 export function mostrarOpcionesBase(pruebas) {
   const selector = document.getElementById("prediccion-base");
-  const opciones = [el("option", "Los mejores del ranking", { value: "" })];
+  const opciones = [el("option", "Los 100 mejores del ranking (aproximación)", { value: "" })];
   for (const p of pruebas) opciones.push(el("option", `${p.nombre} (${formatearFecha(p.fecha)})`, { value: p.id }));
   selector.replaceChildren(...opciones);
   const aguilas = pruebas.find((p) => normalizar(p.nombre).includes("aguilas"));
@@ -41,7 +41,7 @@ export function construirPrediccion(datos) {
     textoRango(f.rango),
     ...(retro ? [f.posicionReal ?? "—", textoDiferencia(f.posicionPrevista, f.posicionReal)] : []),
   ]);
-  const origen = datos.base ? `lista de salida: ${datos.base.nombre} (${formatearFecha(datos.base.fecha)})` : "lista de salida: los mejores del ranking";
+  const origen = datos.base ? `lista de salida: ${datos.base.nombre} (${formatearFecha(datos.base.fecha)})` : "lista de salida: los mejores del ranking (aproximación)";
   const resumen = [`${datos.filas.length} atletas`, origen, `${datos.simulaciones.toLocaleString("es-ES")} simulaciones`];
   if (retro && datos.errorMedio !== null) resumen.push(`error medio de ${String(datos.errorMedio).replace(".", ",")} puestos respecto al resultado real`);
   return [el("p", resumen.join(" · "), { className: "suave" }), tabla(cabeceras, filas)];

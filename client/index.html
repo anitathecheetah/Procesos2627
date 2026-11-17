@@ -36,6 +36,23 @@
       <p id="aviso-admin" class="mensaje" role="status"></p>
     </section>
 
+    <section id="zona-convocatorias" class="tarjeta">
+      <h2>Próximas carreras</h2>
+      <p class="suave">Apúntate a las carreras a las que vas a ir. Cuando la federación publique el listado real, el administrador lo compara con los apuntados.</p>
+      <ul id="lista-convocatorias" class="lista"></ul>
+      <form id="form-convocatoria" class="filtros" novalidate hidden>
+        <label>Nombre <input name="nombre" placeholder="Duatlón de Águilas 2027" required></label>
+        <label>Deporte
+          <select name="deporte"><option value="duatlon">Duatlón</option><option value="triatlon">Triatlón</option></select>
+        </label>
+        <label>Fecha <input name="fecha" type="date" required></label>
+        <label>Lugar <input name="lugar" placeholder="Águilas (Murcia)"></label>
+        <button type="submit">Crear carrera</button>
+      </form>
+      <p id="aviso-convocatorias" class="mensaje" role="status"></p>
+      <div id="detalle-convocatoria"></div>
+    </section>
+
     <section id="zona-ranking" class="tarjeta">
       <h2>Ranking Elo</h2>
       <details class="explicacion">
@@ -91,7 +108,7 @@
           <li>Se parte del <strong>Elo</strong> actual de cada atleta de la lista de salida.</li>
           <li>La carrera se <strong>simula miles de veces</strong>: en cada una, cada atleta rinde según su Elo más un factor de suerte del día. Con más Elo, más probable es llegar antes, con la misma fórmula del ranking.</li>
           <li>Se cuenta cuántas veces queda cada atleta en cada puesto: de ahí salen la posición media, las probabilidades de victoria, podio y top 10, y el <strong>rango</strong> en el que acaba el 80 % de las veces.</li>
-          <li>Para una prueba futura (por ejemplo, Águilas 2027) la lista de salida se toma de la edición anterior o de los mejores del ranking, hasta que se conozca la lista oficial.</li>
+          <li>Para una prueba futura (por ejemplo, Águilas 2027) la lista de salida se toma de la edición anterior (<strong>todos</strong> sus participantes) o, como aproximación, de los 100 mejores del ranking, hasta que se conozca la lista oficial.</li>
           <li>Marcando «Comparar con el resultado real» se predice una prueba ya disputada con el Elo que tenía cada atleta <strong>antes</strong> de ella, y se ve cuánto acertó la predicción.</li>
         </ul>
       </details>
@@ -103,7 +120,7 @@
           </select>
         </label>
         <label>Lista de salida
-          <select id="prediccion-base"><option value="">Los mejores del ranking</option></select>
+          <select id="prediccion-base"><option value="">Los 100 mejores del ranking (aproximación)</option></select>
         </label>
         <label>Sexo (solo con los mejores del ranking)
           <select id="prediccion-sexo">

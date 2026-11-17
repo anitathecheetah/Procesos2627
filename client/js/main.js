@@ -7,6 +7,7 @@ import {
 import "./resultados.js";
 import "./prediccion.js";
 import { mostrarBotonRecalcular } from "./ranking.js";
+import { alCambiarSesion } from "./convocatorias.js";
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -25,6 +26,7 @@ async function mostrarSesionCompleta(usuario) {
   usuarioActual = usuario;
   mostrarBotonRecalcular(usuario?.rol === "admin");
   mostrarSesion(usuario);
+  await alCambiarSesion(usuario);
   if (usuario?.rol === "admin") await cargarAdministracion();
   else mostrarAdministracion(null);
 }
