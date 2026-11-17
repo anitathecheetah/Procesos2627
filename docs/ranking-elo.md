@@ -11,6 +11,13 @@ Un ranking independiente por deporte (duatlón y triatlón), calculado con las p
 - **Peso de la carrera:** `Kduelo = K / (n − 1)`, con `K = 32` y `n` los participantes que puntúan. Así una carrera pesa lo mismo con 20 que con 100 participantes: el cambio de un atleta en una prueba nunca supera K.
 - Todos los cambios de una carrera se calculan con los ratings de **antes** de la carrera y se aplican a la vez. La suma de los cambios es 0: no se crean ni se pierden puntos.
 
+## Ver cómo puntúa cada prueba
+
+- En **Resultados → una prueba**, la columna **Elo** de cada resultado muestra `antes → después (±cambio)`. El cambio es lo que ese atleta ganó o perdió en esa prueba; la suma de los cambios de la prueba es 0. Quien no puntúa (abandono, no salió, descalificado) no tiene Elo en esa prueba.
+- En la **ficha del atleta**, una tabla por deporte con su evolución: fecha, prueba, puesto (`3 de 20`) y Elo antes → después.
+- En la tarjeta del ranking, el desplegable **¿Cómo se calcula el Elo?** resume la fórmula en lenguaje llano.
+- La API lo da en `GET /api/pruebas/:id` (`clasificacion[].elo = { antes, despues, cambio }`, o `null` si no hay) y en `GET /api/atletas/:id` (`elo[].historial`). Los valores salen del último recálculo: si se importan pruebas nuevas hay que recalcular. El cambio se calcula con los valores sin redondear y puede diferir en 1 de la resta de los redondeados.
+
 ## Quién puntúa
 
 - Cuentan solo los **finalizados** con posición. **DNF, DNS y descalificados** (por el estado del Excel o por una sanción DSQ) quedan guardados pero no puntúan en esa prueba.

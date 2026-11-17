@@ -1,6 +1,7 @@
 // Presentación de resultados: solo construye el DOM. No hace peticiones (eso es api.js).
 // Todo el texto entra con textContent, nunca como HTML.
 import { describirParciales } from "./parciales.js";
+import { textoElo } from "./elo.js";
 
 const DEPORTES = { duatlon: "Duatlón", triatlon: "Triatlón" };
 const ESTADOS = { finalizado: "", dnf: "DNF", dns: "DNS", dq: "Descalificado" };
@@ -111,6 +112,7 @@ export function mostrarDetallePrueba({ prueba, clasificacion }, { alElegirAtleta
       f.dorsal,
       f.estado === "finalizado" ? formatearTiempo(f.tiempoTotal) : estado,
       describirParciales(prueba.deporte, f.parciales, formatearTiempo),
+      textoElo(f.elo),
       extras.join(" · "),
     ];
   });
@@ -118,11 +120,12 @@ export function mostrarDetallePrueba({ prueba, clasificacion }, { alElegirAtleta
     enlace("← Volver", alVolver),
     el("h3", prueba.nombre),
     el("p", `${formatearFecha(prueba.fecha)} · ${DEPORTES[prueba.deporte] ?? prueba.deporte}${prueba.categoria ? ` · ${prueba.categoria}` : ""}`, { className: "suave" }),
-    tabla(["Pos.", "Atleta", "Club", "Dorsal", "Tiempo", "Parciales", "Notas"], filas),
+    el("p", "Elo: puntos del atleta antes de la prueba → después, y lo que ganó o perdió. Sale al recalcular el ranking del deporte; quien no termina no puntúa.", { className: "suave" }),
+    tabla(["Pos.", "Atleta", "Club", "Dorsal", "Tiempo", "Parciales", "Elo", "Notas"], filas),
   ]);
 }
 
-export function mostrarFichaAtleta({ atleta, clubes, resultados }, { alElegirPrueba, alVolver }) {
+export function mostrarFichaAtleta({ atleta, clubes, resultados, elo = [] }, { alElegirPrueba, alVolver }) {
   alternarVista([
     enlace("← Volver", alVolver),
     el("h3", atleta.nombre),
@@ -135,6 +138,15 @@ export function mostrarFichaAtleta({ atleta, clubes, resultados }, { alElegirPru
       r.estado === "finalizado" ? formatearTiempo(r.tiempoTotal) : "—",
       r.sanciones.map(textoSancion).join(" · "),
     ])),
+    ...elo.flatMap((e) => [
+      el("h4", `Elo en ${DEPORTES[e.deporte] ?? e.deporte}: ${e.rating} (${e.pruebas} ${e.pruebas === 1 ? "prueba" : "pruebas"})`),
+      tabla(["Fecha", "Prueba", "Puesto", "Elo"], e.historial.map((h) => [
+        formatearFecha(h.fecha),
+        enlace(h.prueba, () => alElegirPrueba({ id: h.pruebaId })),
+        `${h.posicion} de ${h.participantes}`,
+        textoElo({ antes: h.antes, despues: h.despues, cambio: h.despues - h.antes }),
+      ])),
+    ]),
   ]);
 }
 

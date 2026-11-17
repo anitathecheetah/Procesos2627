@@ -7,6 +7,13 @@ const MAX_BUSQUEDA = 50;
 const ORDEN_ESTADO = { [ESTADOS_RESULTADO.FINALIZADO]: 0, [ESTADOS_RESULTADO.DQ]: 1, [ESTADOS_RESULTADO.DNF]: 2, [ESTADOS_RESULTADO.DNS]: 3 };
 
 // Busca por id con caché para no repetir lecturas dentro de una misma consulta.
+// Elo de un atleta en una prueba: rating antes, después y cambio (null si el ranking aún no se ha calculado
+// con esta prueba o el atleta no puntuó: abandonos, descalificados, pruebas con menos de 2 participantes).
+// El cambio se calcula con los valores sin redondear y por eso puede diferir en 1 de la resta de los redondeados.
+const resumenElo = (h) => (h ? {
+  antes: Math.round(h.ratingAntes), despues: Math.round(h.ratingDespues), cambio: Math.round(h.ratingDespues - h.ratingAntes),
+} : null);
+
 function conCache(buscar) {
   const memoria = new Map();
   return async (id) => {
@@ -38,7 +45,10 @@ export function crearServicioConsulta({ repos }) {
     async detallePrueba(id) {
       const prueba = await repos.pruebas.buscarPorId(id);
       if (!prueba) throw new ErrorLogica("NO_ENCONTRADO", "La prueba no existe");
-      const [resultados, sanciones] = await Promise.all([repos.resultados.listar({ pruebaId: id }), repos.sanciones.listar({ pruebaId: id })]);
+      const [resultados, sanciones, pasosElo] = await Promise.all([
+        repos.resultados.listar({ pruebaId: id }), repos.sanciones.listar({ pruebaId: id }), repos.historialElo.listar({ pruebaId: id }),
+      ]);
+      const eloDe = new Map(pasosElo.map((h) => [h.atletaId, h]));
       const atleta = conCache((i) => repos.atletas.buscarPorId(i));
       const club = conCache((i) => repos.clubes.buscarPorId(i));
 
@@ -56,6 +66,7 @@ export function crearServicioConsulta({ repos }) {
           atleta: { id: a.id, nombre: a.nombre, anioNacimiento: a.anioNacimiento },
           club: resumenClub(await club(r.clubId)),
           sanciones: resumenSanciones(sanciones.filter((s) => s.resultadoId === r.id)),
+          elo: resumenElo(eloDe.get(r.atletaId)),
         };
       }));
       clasificacion.sort((x, y) =>

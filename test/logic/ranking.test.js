@@ -157,3 +157,34 @@ test("el ranking se puede filtrar por sexo (el del atleta, tomado de la categor�
   assert.equal((await ranking.ranking("duatlon")).total, 4);
   await assert.rejects(ranking.ranking("duatlon", { sexo: "X" }), codigo("DATOS_INVALIDOS"));
 });
+
+test("detallePrueba muestra el Elo de cada resultado (antes, después y cambio) tras recalcular, y null antes", async () => {
+  const s = preparar();
+  const p = await s.importar("1", "2026-03-01", [
+    finalista("Ana López", 1995, "Club Uno", 1, 1, "00:50:00"),
+    finalista("Beto Ruiz", 1990, "Club Dos", 2, 2, "00:51:00"),
+    abandono("Carla Sanz", 1992, "Club Uno", 3),
+  ]);
+  const antes = await s.consulta.detallePrueba(p.prueba.id);
+  assert.ok(antes.clasificacion.every((f) => f.elo === null), "sin recalcular no hay Elo");
+
+  await s.ranking.recalcular("a", "duatlon");
+  const { clasificacion } = await s.consulta.detallePrueba(p.prueba.id);
+  const por = Object.fromEntries(clasificacion.map((f) => [f.atleta.nombre, f.elo]));
+  assert.deepEqual(por["Ana López"], { antes: 1500, despues: 1516, cambio: 16 }, "con 2 que puntúan, el único duelo entre iguales vale K/2 = 16 puntos");
+  assert.deepEqual(por["Beto Ruiz"], { antes: 1500, despues: 1484, cambio: -16 });
+  assert.equal(por["Carla Sanz"], null, "quien abandona no puntúa");
+  assert.equal(por["Ana López"].cambio + por["Beto Ruiz"].cambio, 0, "lo que uno gana, otro lo pierde");
+});
+
+test("la ficha del atleta guarda su Elo por prueba y encadena antes y después", async () => {
+  const s = preparar();
+  await s.importar("1", "2026-03-01", [finalista("Ana López", 1995, "Club Uno", 1, 1, "00:50:00"), finalista("Beto Ruiz", 1990, "Club Dos", 2, 2, "00:51:00")]);
+  await s.importar("2", "2026-04-01", [finalista("Beto Ruiz", 1990, "Club Dos", 1, 1, "00:50:00"), finalista("Ana López", 1995, "Club Uno", 2, 2, "00:51:00")]);
+  await s.ranking.recalcular("a", "duatlon");
+  const beto = (await s.consulta.buscarAtletas("beto"))[0];
+  const ficha = await s.consulta.fichaAtleta(beto.id);
+  const [uno, dos] = ficha.elo[0].historial;
+  assert.equal(uno.despues, dos.antes, "el Elo de después de una prueba es el de antes de la siguiente");
+  assert.equal(ficha.elo[0].rating, dos.despues);
+});

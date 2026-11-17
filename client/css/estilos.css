@@ -37,3 +37,9 @@ button.enlace, td button.enlace { padding: 0; background: none; border: 0; color
 #zona-ranking { margin-bottom: 1rem; }
 .paginador { display: flex; gap: .75rem; align-items: center; margin: .75rem 0; }
 #ranking-recalcular { background: transparent; color: var(--marca); border: 1px solid var(--marca); }
+
+/* Explicación del Elo (desplegable en la tarjeta del ranking) */
+.explicacion { margin: 0.5rem 0 1rem; font-size: 0.9rem; }
+.explicacion summary { cursor: pointer; color: var(--suave); }
+.explicacion ul { margin: 0.5rem 0 0; padding-left: 1.2rem; }
+.explicacion li { margin: 0.25rem 0; }
