@@ -57,9 +57,9 @@ test("apuntarse y desapuntarse: se cuenta una vez por persona y se refleja en `a
   const c = await servicio.crear(admin, DATOS);
   const eva = await registrar("Eva Gil", "eva@correo.es");
   const raul = await registrar("Raúl Soto", "raul@correo.es");
-  await servicio.apuntarse(eva, c.id);
-  await servicio.apuntarse(eva, c.id); // repetir no duplica
-  await servicio.apuntarse(raul, c.id);
+  await servicio.apuntarse(eva, c.id, "Eva Gil Pérez");
+  await servicio.apuntarse(eva, c.id, "Eva Gil Pérez"); // repetir no duplica
+  await servicio.apuntarse(raul, c.id, "Raúl Soto Pérez");
   let [fila] = await servicio.listar({ usuarioId: eva });
   assert.equal(fila.apuntados, 2);
   assert.equal(fila.apuntado, true);
@@ -73,15 +73,15 @@ test("solo el administrador ve quién se apuntó, y sin el email", async () => {
   const { admin, registrar, servicio } = await preparar();
   const c = await servicio.crear(admin, DATOS);
   const eva = await registrar("Eva Gil", "eva@correo.es");
-  await servicio.apuntarse(eva, c.id);
-  assert.deepEqual(await servicio.apuntados(admin, c.id), [{ usuarioId: eva, nombre: "Eva Gil" }]);
+  await servicio.apuntarse(eva, c.id, "Eva Gil Pérez");
+  assert.deepEqual(await servicio.apuntados(admin, c.id), [{ usuarioId: eva, nombre: "Eva Gil Pérez" }]);
   await assert.rejects(servicio.apuntados(eva, c.id), codigo("PROHIBIDO"));
 });
 
 test("borrar una carrera borra también sus inscripciones", async () => {
   const { admin, registrar, servicio, repos } = await preparar();
   const c = await servicio.crear(admin, DATOS);
-  await servicio.apuntarse(await registrar("Eva Gil", "eva@correo.es"), c.id);
+  await servicio.apuntarse(await registrar("Eva Gil", "eva@correo.es"), c.id, "Eva Gil Pérez");
   await servicio.eliminar(admin, c.id);
   assert.deepEqual(await servicio.listar(), []);
   assert.deepEqual(await repos.inscripciones.listar(), []);
@@ -102,9 +102,9 @@ test("ERROR: apuntarse exige sesión y una carrera abierta que exista; con lista
   const eva = await registrar("Eva Gil", "eva@correo.es");
   await assert.rejects(servicio.apuntarse(undefined, c.id), codigo("NO_AUTENTICADO"));
   await assert.rejects(servicio.apuntarse(eva, "no-existe"), codigo("NO_ENCONTRADO"));
-  await servicio.apuntarse(eva, c.id);
-  await servicio.cargarListaSalida(admin, c.id, await salida(["Eva Gil"]));
-  await assert.rejects(servicio.apuntarse(await registrar("Raúl Soto", "raul@correo.es"), c.id), codigo("DATOS_INVALIDOS"));
+  await servicio.apuntarse(eva, c.id, "Eva Gil Pérez");
+  await servicio.cargarListaSalida(admin, c.id, await salida(["Eva Gil Pérez"]));
+  await assert.rejects(servicio.apuntarse(await registrar("Raúl Soto", "raul@correo.es"), c.id, "Raúl Soto Pérez"), codigo("DATOS_INVALIDOS"));
   await assert.rejects(servicio.desapuntarse(eva, c.id), codigo("DATOS_INVALIDOS"));
 });
 
@@ -113,7 +113,7 @@ test("el listado ordena primero las abiertas (la más próxima arriba) y luego l
   await servicio.crear(admin, { ...DATOS, nombre: "Lejana", fecha: "2027-06-01" });
   await servicio.crear(admin, { ...DATOS, nombre: "Cercana", fecha: "2027-02-07" });
   const cerrada = await servicio.crear(admin, { ...DATOS, nombre: "Con lista", fecha: "2027-01-01" });
-  await servicio.cargarListaSalida(admin, cerrada.id, await salida(["Eva Gil"]));
+  await servicio.cargarListaSalida(admin, cerrada.id, await salida(["Eva Gil Pérez"]));
   const lista = await servicio.listar();
   assert.deepEqual(lista.map((c) => c.nombre), ["Cercana", "Lejana", "Con lista"]);
   assert.deepEqual(lista.map((c) => c.participantes), [0, 0, 1]);
@@ -122,12 +122,12 @@ test("el listado ordena primero las abiertas (la más próxima arriba) y luego l
 test("subir la lista de salida: cierra la carrera y la compara con los apuntados", async () => {
   const { admin, registrar, servicio, salida } = await preparar();
   const c = await servicio.crear(admin, DATOS);
-  for (const [n, e] of [["Ana Rodríguez", "ana@c.es"], ["Beto Ruiz", "beto@c.es"], ["Carla Gil", "carla@c.es"]]) await servicio.apuntarse(await registrar(n, e), c.id);
-  const r = await servicio.cargarListaSalida(admin, c.id, await salida(["RODRIGUEZ MARTIN, ANA", "Carla Gil", "Dani Soto"]), { sexo: "F" });
+  for (const [n, e] of [["Ana Rodríguez Martín", "ana@c.es"], ["Beto Ruiz López", "beto@c.es"], ["Carla Gil López", "carla@c.es"]]) await servicio.apuntarse(await registrar(n, e), c.id, n);
+  const r = await servicio.cargarListaSalida(admin, c.id, await salida(["RODRIGUEZ MARTIN, ANA", "Carla Gil López", "Dani Soto López"]), { sexo: "F" });
   assert.deepEqual([r.participantes, r.menoresExcluidos, r.descartadas.length], [3, 0, 0]);
   const a = r.asistencia;
   assert.deepEqual([a.participantes, a.enLista, a.noEnLista, a.sinApuntarse], [3, 2, 1, 1]);
-  assert.deepEqual(a.apuntados.map((x) => [x.nombre, x.enLista]), [["Ana Rodríguez", true], ["Beto Ruiz", false], ["Carla Gil", true]]);
+  assert.deepEqual(a.apuntados.map((x) => [x.nombre, x.enLista]), [["Ana Rodríguez Martín", true], ["Beto Ruiz López", false], ["Carla Gil López", true]]);
   assert.equal(a.apuntados[0].atleta.nombre, "RODRIGUEZ MARTIN, ANA");
   assert.equal(a.apuntados[0].dorsal, "1");
   assert.deepEqual(await servicio.asistencia(admin, c.id), a, "consultar después da lo mismo");
@@ -167,4 +167,16 @@ test("ERROR: subir la lista exige admin, un Excel válido y una carrera que exis
   await assert.rejects(servicio.cargarListaSalida(admin, c.id, Buffer.from("no es un excel")), codigo("DATOS_INVALIDOS"));
   await assert.rejects(servicio.cargarListaSalida(admin, c.id, await salida(["Ana Uno"]), { sexo: "X" }), codigo("DATOS_INVALIDOS"));
   await assert.rejects(servicio.listaSalida("no-existe"), codigo("NO_ENCONTRADO"));
+});
+
+test("apuntarse exige nombre y dos apellidos y permite corregirlo sin duplicar", async () => {
+  const { admin, registrar, servicio } = await preparar();
+  const c = await servicio.crear(admin, DATOS);
+  const eva = await registrar("Eva", "eva@correo.es");
+  await assert.rejects(servicio.apuntarse(eva, c.id), codigo("DATOS_INVALIDOS"));
+  await assert.rejects(servicio.apuntarse(eva, c.id, "Eva"), codigo("DATOS_INVALIDOS"));
+  await assert.rejects(servicio.apuntarse(eva, c.id, "Eva Gil"), codigo("DATOS_INVALIDOS"));
+  await servicio.apuntarse(eva, c.id, "Eva  Gil   Pérez");
+  await servicio.apuntarse(eva, c.id, "Eva María Gil Pérez");
+  assert.deepEqual((await servicio.apuntados(admin, c.id)).map((a) => a.nombre), ["Eva María Gil Pérez"]);
 });

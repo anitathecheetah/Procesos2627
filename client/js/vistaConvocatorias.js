@@ -139,3 +139,26 @@ export function mostrarPreparacion(p) {
   }
   document.getElementById("detalle-convocatoria").replaceChildren(...nodos);
 }
+
+// Al pulsar «Me apunto»: pide el nombre y los dos apellidos (se reconoce a la persona en la lista de salida de la
+// federación por su nombre). Viene rellenado con el nombre de la cuenta.
+export function mostrarFormularioInscripcion(carrera, nombreCuenta, alConfirmar) {
+  const entrada = el("input", undefined, { type: "text", value: nombreCuenta ?? "", autocomplete: "name", required: true, maxLength: 100 });
+  const etiqueta = el("label", "Nombre y dos apellidos (como figura en la federación)");
+  etiqueta.append(entrada);
+  const aviso = el("p", undefined, { className: "mensaje", role: "alert" });
+  const confirmar = () => {
+    if (entrada.value.trim().split(/\s+/).filter(Boolean).length < 3) {
+      aviso.textContent = "Escribe tu nombre y tus dos apellidos.";
+      return entrada.focus();
+    }
+    alConfirmar(carrera, entrada.value);
+  };
+  entrada.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); confirmar(); } });
+  document.getElementById("detalle-convocatoria").replaceChildren(
+    el("h3", `Apuntarte a ${carrera.nombre}`),
+    el("p", "Se usa para reconocerte cuando la federación publique la lista de salida. Solo el administrador ve los nombres de los apuntados.", { className: "suave" }),
+    etiqueta, aviso, boton("Confirmar inscripción", confirmar, ""),
+  );
+  entrada.focus();
+}

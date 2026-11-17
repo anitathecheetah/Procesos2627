@@ -118,7 +118,7 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
   }));
   // Apuntarse y desapuntarse: el usuario de la sesión.
   router.put("/convocatorias/:id/inscripcion", exigirSesion, manejar(async (req, res) => {
-    await convocatorias.apuntarse(req.usuarioId, req.params.id);
+    await convocatorias.apuntarse(req.usuarioId, req.params.id, req.body?.nombre);
     res.status(204).end();
   }));
   router.delete("/convocatorias/:id/inscripcion", exigirSesion, manejar(async (req, res) => {

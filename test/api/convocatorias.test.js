@@ -10,7 +10,7 @@ async function arrancar() {
   const repositorio = crearRepositorioMemoria();
   const hash = await crearCifradorBcrypt().cifrar("secreta123");
   await repositorio.crear({ id: "admin", nombre: "Admin", email: "admin@correo.es", rol: "admin", estado: "activo", hash });
-  await repositorio.crear({ id: "eva", nombre: "Eva Gil", email: "eva@correo.es", rol: "user", estado: "activo", hash });
+  await repositorio.crear({ id: "eva", nombre: "Eva Gil Pérez", email: "eva@correo.es", rol: "user", estado: "activo", hash });
   const servidor = await new Promise((r) => { const s = crearApp({ repositorio, secreto: "secreto-de-prueba" }).listen(0, () => r(s)); });
   const url = `http://127.0.0.1:${servidor.address().port}`;
   const entrar = async (email) => (await fetch(`${url}/api/sesion`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password: "secreta123" }) })).headers.getSetCookie()[0].split(";")[0];
@@ -34,14 +34,15 @@ test("el admin crea, cualquiera lista, un usuario se apunta y el admin ve quién
     assert.deepEqual(publica.map((c) => [c.nombre, c.apuntados]), [["Duatlón Águilas 2027", 0]]);
     assert.ok(!("apuntado" in publica[0]), "sin sesión no se sabe si estás apuntado");
 
-    assert.equal((await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion`)).status, 204);
+    assert.equal((await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion`)).status, 400, "sin nombre completo no se apunta");
+    assert.equal((await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion`, { nombre: "Eva Gil Pérez" })).status, 204);
     const conSesion = await (await llamar(eva, "GET", "/convocatorias")).json();
     assert.deepEqual([conSesion[0].apuntados, conSesion[0].apuntado], [1, true]);
 
     const apuntados = await (await llamar(admin, "GET", `/convocatorias/${id}/inscripciones`)).json();
-    assert.deepEqual(apuntados, [{ usuarioId: "eva", nombre: "Eva Gil" }]);
+    assert.deepEqual(apuntados, [{ usuarioId: "eva", nombre: "Eva Gil Pérez" }]);
 
-    assert.equal((await llamar(eva, "DELETE", `/convocatorias/${id}/inscripcion`)).status, 204);
+    assert.equal((await llamar(eva, "DELETE", `/convocatorias/${id}/inscripcion`, { nombre: "Eva Gil Pérez" })).status, 204);
     assert.equal((await (await llamar(undefined, "GET", "/convocatorias")).json())[0].apuntados, 0);
     assert.equal((await llamar(admin, "DELETE", `/convocatorias/${id}`)).status, 204);
     assert.deepEqual(await (await llamar(undefined, "GET", "/convocatorias")).json(), []);
@@ -54,8 +55,8 @@ test("el admin sube la lista de salida: cierra la carrera, es pública y se comp
     const admin = await entrar("admin@correo.es");
     const eva = await entrar("eva@correo.es");
     const { id } = await (await llamar(admin, "POST", "/convocatorias", DATOS)).json();
-    await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion`);
-    const excel = await crearExcel([finalista("Eva Gil", 1995, "Club Uno", 1, 1, "00:52:00"), finalista("Beto Ruiz", 1990, "Club Dos", 2, 2, "00:53:00")]);
+    await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion`, { nombre: "Eva Gil Pérez" });
+    const excel = await crearExcel([finalista("Eva Gil Pérez", 1995, "Club Uno", 1, 1, "00:52:00"), finalista("Beto Ruiz", 1990, "Club Dos", 2, 2, "00:53:00")]);
     const subir = (cookie) => fetch(`${url}/api/convocatorias/${id}/salida?sexo=F`, {
       method: "PUT", headers: { ...(cookie ? { Cookie: cookie } : {}), "Content-Type": "application/octet-stream" }, body: excel,
     });
@@ -66,7 +67,7 @@ test("el admin sube la lista de salida: cierra la carrera, es pública y se comp
     assert.deepEqual(await (await llamar(admin, "GET", `/convocatorias/${id}/asistencia`)).json(), r.asistencia);
 
     const publica = await (await llamar(undefined, "GET", `/convocatorias/${id}/salida`)).json();
-    assert.deepEqual(publica.map((p) => p.atleta.nombre), ["Beto Ruiz", "Eva Gil"]);
+    assert.deepEqual(publica.map((p) => p.atleta.nombre), ["Beto Ruiz", "Eva Gil Pérez"]);
     const lista = await (await llamar(undefined, "GET", "/convocatorias")).json();
     assert.deepEqual([lista[0].estado, lista[0].participantes], ["cerrada", 2]);
     assert.equal((await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion`)).status, 400, "cerrada: no admite inscripciones");
@@ -81,7 +82,7 @@ test("la predicción de una carrera futura usa su lista de salida", async () => 
     assert.equal((await llamar(undefined, "GET", `/prediccion/duatlon?convocatoria=${id}`)).status, 400, "sin lista de salida");
     await fetch(`${url}/api/convocatorias/${id}/salida`, {
       method: "PUT", headers: { Cookie: admin, "Content-Type": "application/octet-stream" },
-      body: await crearExcel([finalista("Eva Gil", 1995, "Club Uno", 1, 1, "00:52:00"), finalista("Beto Ruiz", 1990, "Club Dos", 2, 2, "00:53:00"), finalista("Carla Gil", 1992, "Club Uno", 3, 3, "00:54:00")]),
+      body: await crearExcel([finalista("Eva Gil Pérez", 1995, "Club Uno", 1, 1, "00:52:00"), finalista("Beto Ruiz", 1990, "Club Dos", 2, 2, "00:53:00"), finalista("Carla Gil", 1992, "Club Uno", 3, 3, "00:54:00")]),
     });
     const r = await llamar(undefined, "GET", `/prediccion/duatlon?convocatoria=${id}`);
     assert.equal(r.status, 200);
