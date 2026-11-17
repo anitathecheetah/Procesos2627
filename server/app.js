@@ -13,6 +13,7 @@ import { UNICOS_DOMINIO } from "./data/indicesDominio.js";
 import { crearServicioDominio } from "./logic/dominio.js";
 import { crearServicioRanking } from "./logic/ranking.js";
 import { crearServicioConsulta } from "./logic/consulta.js";
+import { crearServicioPrediccion } from "./logic/prediccion.js";
 import { crearServicioSanciones } from "./logic/sanciones.js";
 import { crearServicioImportacion } from "./logic/importacion.js";
 import { crearServicioSesiones } from "./logic/sesiones.js";
@@ -62,6 +63,7 @@ export function crearApp({
     sanciones,
     consulta: crearServicioConsulta({ repos: dominioRepos }),
     ranking: crearServicioRanking({ repos: dominioRepos, usuarios, log }),
+    prediccion: crearServicioPrediccion({ repos: dominioRepos }),
     sesiones: crearServicioSesiones(repositorioSesiones),
     secreto,
     produccion: process.env.NODE_ENV === "production",

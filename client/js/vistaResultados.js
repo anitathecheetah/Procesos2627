@@ -29,7 +29,7 @@ const textoSancion = (s) =>
   s.pares.map((p) => `${SANCIONES[p.accion] ?? p.accion} (${SANCIONES[p.infraccion] ?? p.infraccion})`).join("; ") +
   (s.observaciones ? ` — ${s.observaciones}` : "");
 
-function el(etiqueta, texto, atributos = {}) {
+export function el(etiqueta, texto, atributos = {}) {
   const e = document.createElement(etiqueta);
   if (texto !== undefined) e.textContent = texto;
   Object.assign(e, atributos);
@@ -42,7 +42,7 @@ function enlace(texto, alPulsar) {
   return b;
 }
 
-function tabla(cabeceras, filas) {
+export function tabla(cabeceras, filas) {
   const t = el("table");
   const cabecera = el("tr");
   cabeceras.forEach((c) => cabecera.append(el("th", c)));

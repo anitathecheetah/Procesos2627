@@ -106,7 +106,7 @@ Al cerrar cada hito se etiqueta el último commit de `main` (`hito-1`, `hito-2`,
 
 ## Ranking Elo de duatlón y triatlón
 
-Cada prueba importada se trata como duelos entre todos los participantes según su posición final; los DNF, DNS y descalificados no puntúan. El ranking se recalcula por fecha y es determinista. También hay un ranking de clubes (media del Elo de sus mejores atletas). La fórmula, sus decisiones y los límites están en [docs/ranking-elo.md](docs/ranking-elo.md). La importación de Excel está en [docs/importacion-excel.md](docs/importacion-excel.md) y el modelo de datos en [docs/modelo-de-datos.md](docs/modelo-de-datos.md).
+Cada prueba importada se trata como duelos entre todos los participantes según su posición final; los DNF, DNS y descalificados no puntúan. El ranking se recalcula por fecha y es determinista. También hay un ranking de clubes (media del Elo de sus mejores atletas). La fórmula, sus decisiones y los límites están en [docs/ranking-elo.md](docs/ranking-elo.md). Con ese Elo se puede **predecir una carrera** (probabilidad de victoria, podio y top 10 de cada atleta, como Split Lab): ver [docs/prediccion.md](docs/prediccion.md). La importación de Excel está en [docs/importacion-excel.md](docs/importacion-excel.md) y el modelo de datos en [docs/modelo-de-datos.md](docs/modelo-de-datos.md).
 
 ## Licencia
 
