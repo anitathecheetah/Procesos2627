@@ -1,6 +1,6 @@
 // Conecta la vista de la predicción (vistaPrediccion.js) con el cliente de API (api.js).
 import { listarPruebas, listarConvocatorias, prediccion } from "./api.js";
-import { mostrarOpcionesBase, actualizarControles, mostrarPrediccion, limpiarPrediccion, mostrarAvisoPrediccion } from "./vistaPrediccion.js";
+import { mostrarOpcionesBase, refrescarOpcionesPorSexo, actualizarControles, mostrarPrediccion, limpiarPrediccion, mostrarAvisoPrediccion } from "./vistaPrediccion.js";
 
 const valor = (id) => document.getElementById(id).value;
 
@@ -16,6 +16,7 @@ async function cargarPruebas() {
 
 document.getElementById("prediccion-deporte").addEventListener("change", () => { limpiarPrediccion(); mostrarAvisoPrediccion(""); cargarPruebas(); });
 document.getElementById("prediccion-base").addEventListener("change", actualizarControles);
+document.getElementById("prediccion-sexo").addEventListener("change", refrescarOpcionesPorSexo);
 document.addEventListener("convocatorias-cambiadas", cargarPruebas);
 
 document.getElementById("form-prediccion").addEventListener("submit", async (evento) => {

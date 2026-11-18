@@ -1,6 +1,7 @@
 // Presentación de la predicción: solo construye el DOM. No hace peticiones (eso es api.js).
 import { el, tabla, formatearFecha } from "./dom.js";
 import { porcentaje, textoRango, textoDiferencia } from "./formatoPrediccion.js";
+import { nombreConCategoria, pruebaEncajaConSexo } from "./categorias.js";
 
 const normalizar = (t) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
@@ -8,23 +9,41 @@ const normalizar = (t) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase(
 // los participantes de una prueba anterior o, como aproximación, los mejores del ranking.
 // Si hay una carrera con lista oficial se deja elegida (es lo que de verdad va a pasar); si no, la prueba de Águilas
 // más reciente (pruebas llega con las más recientes primero).
+let pruebasCargadas = [];
+let carrerasCargadas = [];
+
 export function mostrarOpcionesBase(pruebas, carreras = []) {
+  pruebasCargadas = pruebas;
+  carrerasCargadas = carreras;
+  pintarOpciones(true);
+}
+
+// Las pruebas anteriores se filtran por el sexo elegido; al cambiar el sexo se repinta la lista
+// (conservando la elección si sigue disponible).
+export function refrescarOpcionesPorSexo() {
+  pintarOpciones(false);
+}
+
+function pintarOpciones(elegirPorDefecto) {
   const selector = document.getElementById("prediccion-base");
+  const sexo = document.getElementById("prediccion-sexo").value;
+  const anterior = selector.value;
+  const pruebas = pruebasCargadas.filter((p) => pruebaEncajaConSexo(p, sexo));
   const opciones = [el("option", "Los 100 mejores del ranking (aproximación)", { value: "" })];
-  const conLista = carreras.filter((c) => c.participantes > 0);
+  const conLista = carrerasCargadas.filter((c) => c.participantes > 0);
   for (const c of conLista) opciones.push(el("option", `Lista de salida oficial: ${c.nombre} (${formatearFecha(c.fecha)}) · ${c.participantes} participantes`, { value: `c:${c.id}` }));
-  for (const p of pruebas) opciones.push(el("option", `Prueba anterior: ${p.nombre} (${formatearFecha(p.fecha)})`, { value: p.id }));
+  for (const p of pruebas) opciones.push(el("option", `Prueba anterior: ${nombreConCategoria(p)} (${formatearFecha(p.fecha)})`, { value: p.id }));
   selector.replaceChildren(...opciones);
   const aguilas = pruebas.find((p) => normalizar(p.nombre).includes("aguilas"));
-  if (conLista.length) selector.value = `c:${conLista[0].id}`;
+  if (!elegirPorDefecto && opciones.some((o) => o.value === anterior)) selector.value = anterior;
+  else if (conLista.length) selector.value = `c:${conLista[0].id}`;
   else if (aguilas) selector.value = aguilas.id;
   actualizarControles();
 }
 
-// Sexo solo se usa con el ranking; la comparación con el resultado real solo con una prueba anterior.
+// La comparación con el resultado real solo tiene sentido con una prueba anterior.
 export function actualizarControles() {
   const valor = document.getElementById("prediccion-base").value;
-  document.getElementById("prediccion-sexo").disabled = Boolean(valor);
   const casilla = document.getElementById("prediccion-retro");
   casilla.disabled = !valor || valor.startsWith("c:");
   if (casilla.disabled) casilla.checked = false;

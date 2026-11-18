@@ -41,3 +41,7 @@ Con una prueba ya disputada y `retrospectiva=true`, la predicción usa el Elo qu
 Devuelve `{ deporte, simulaciones, retrospectiva, base, errorMedio?, filas }`; cada fila tiene `posicionPrevista`, `atleta`, `club`, `rating`, `posicionMedia`, `probVictoria`, `probPodio`, `probTop10`, `rango` y, con `retrospectiva`, `posicionReal`. Errores: 400 (parámetros no válidos o menos de 2 atletas con ranking) y 404 (prueba base inexistente).
 
 En la web está en la tarjeta **Predicción de una carrera**; al abrirla ya viene elegida la prueba de Águilas más reciente.
+
+## Selector de sexo y categoría de las pruebas
+
+Las pruebas anteriores se muestran con su categoría («Élite masculino», «Élite femenino»), para distinguir las dos carreras de una misma prueba. El selector **Sexo** filtra esa lista (y el ranking cuando no se elige prueba) y se puede cambiar siempre; con «Todos» salen todas. Una prueba sin categoría reconocible se muestra con cualquier sexo. La lógica está en `client/js/categorias.js`.
