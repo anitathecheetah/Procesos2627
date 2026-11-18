@@ -4,7 +4,7 @@
 // así que las columnas de resultado no se leen por posición fija sino por el contenido de cada celda.
 import readXlsxFile from "read-excel-file/node";
 import { ErrorLogica } from "./errores.js";
-import { estadoDesdeTexto, ESTADOS_RESULTADO } from "./catalogos.js";
+import { estadoDesdeTexto, ESTADOS_RESULTADO, codigoFederacion } from "./catalogos.js";
 
 const COLUMNAS_OBLIGATORIAS = ["NOMBRE", "CLUB", "DORSAL", "NACIMIENTO", "TIEMPO"];
 const PARCIALES_ESPERADOS = 5; // duatlón: carrera, T1, bici, T2, carrera · triatlón: natación, T1, bici, T2, carrera
@@ -91,6 +91,7 @@ export function filaAResultado(fila, cabecera) {
       nombre: String(nombre).trim(),
       anioNacimiento: anio,
       club: vacio(fila[col("CLUB")]) ? null : String(fila[col("CLUB")]).trim(),
+      federacion: col("FEDERACION") === -1 || vacio(fila[col("FEDERACION")]) ? null : codigoFederacion(fila[col("FEDERACION")]),
       posicion,
       estado,
       tiempoTotal,

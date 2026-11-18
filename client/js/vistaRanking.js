@@ -6,7 +6,7 @@ function celda(texto) {
 }
 
 const CABECERAS = {
-  atletas: ["#", "Atleta", "Club", "Elo", "Pruebas"],
+  atletas: ["#", "Atleta", "Club", "Licencia", "Elo", "Pruebas"],
   clubes: ["#", "Club", "Elo medio", "Atletas", "Mejores"],
 };
 const VACIO = {
@@ -15,7 +15,7 @@ const VACIO = {
 };
 
 function filaDeAtleta(f) {
-  return [f.posicion, f.atleta.nombre, f.club?.nombre, f.rating, f.pruebas];
+  return [f.posicion, f.atleta.nombre, f.club?.nombre, f.comunidad, f.rating, f.pruebas];
 }
 function filaDeClub(f) {
   return [f.posicion, f.club.nombre, f.rating, f.atletas, f.mejores.map((m) => `${m.nombre} (${m.rating})`).join(", ")];

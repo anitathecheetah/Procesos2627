@@ -5,6 +5,7 @@ import express, { Router } from "express";
 import { crearAutenticacion, exigirSesion } from "./autenticacion.js";
 import { borrarCookie, crearCookie, firmar } from "./cookies.js";
 import { leerCsvSanciones } from "../logic/sanciones.js";
+import { COMUNIDADES } from "../logic/catalogos.js";
 import { validarPassword } from "../logic/politicaPassword.js";
 
 const ESTADO_HTTP = {
@@ -158,10 +159,14 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
     res.status(200).json(await consulta.fichaAtleta(req.params.id));
   }));
 
+  // Catálogo de comunidades autónomas (público).
+  router.get("/comunidades", (_req, res) => {
+    res.status(200).json(COMUNIDADES.map(({ nombre, codigo }) => ({ nombre, codigo })));
+  });
   // Ranking Elo de un deporte (público, paginado) y su recálculo (solo admin).
   router.get("/ranking/:deporte", manejar(async (req, res) => {
-    const { pagina, tamano, minPruebas, sexo } = req.query;
-    res.status(200).json(await ranking.ranking(req.params.deporte, { pagina, tamano, minPruebas, sexo }));
+    const { pagina, tamano, minPruebas, sexo, comunidad } = req.query;
+    res.status(200).json(await ranking.ranking(req.params.deporte, { pagina, tamano, minPruebas, sexo, comunidad }));
   }));
   // Ranking de clubes de un deporte (público, paginado): media del Elo de sus mejores atletas.
   router.get("/ranking/:deporte/clubes", manejar(async (req, res) => {

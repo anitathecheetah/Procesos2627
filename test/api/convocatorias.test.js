@@ -133,3 +133,14 @@ test("preparación: días restantes en el listado y previsión + material en /pr
     assert.equal((await fetch(`${url}/convocatorias/nada/preparacion`)).status, 404);
   } finally { servidor.close(); servidor.closeAllConnections(); }
 });
+
+test("GET /api/comunidades devuelve el catálogo (público)", async () => {
+  const { llamar, cerrar } = await arrancar();
+  try {
+    const r = await llamar(undefined, "GET", "/comunidades");
+    assert.equal(r.status, 200);
+    const lista = await r.json();
+    assert.equal(lista.length, 19);
+    assert.deepEqual(lista.find((c) => c.codigo === "MAD"), { nombre: "Comunidad de Madrid", codigo: "MAD" });
+  } finally { cerrar(); }
+});

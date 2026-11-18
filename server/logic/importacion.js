@@ -77,6 +77,7 @@ export function crearServicioImportacion({ repos, dominio, usuarios, log = { inf
             pruebaId: prueba.id,
             atletaId: atleta.id,
             ...(clubId ? { clubId } : {}),
+            ...(r.federacion ? { federacion: r.federacion } : {}),
             dorsal: r.dorsal,
             posicion: r.posicion,
             estado: r.estado,
