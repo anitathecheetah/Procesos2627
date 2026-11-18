@@ -1,7 +1,7 @@
 // Presentación de la predicción: solo construye el DOM. No hace peticiones (eso es api.js).
 import { el, tabla, formatearFecha } from "./dom.js";
 import { porcentaje, textoRango, textoDiferencia } from "./formatoPrediccion.js";
-import { nombreConCategoria, pruebaEncajaConSexo } from "./categorias.js";
+import { pruebaEncajaConSexo } from "./categorias.js";
 
 const normalizar = (t) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
@@ -32,7 +32,7 @@ function pintarOpciones(elegirPorDefecto) {
   const opciones = [el("option", "Los 100 mejores del ranking (aproximación)", { value: "" })];
   const conLista = carrerasCargadas.filter((c) => c.participantes > 0);
   for (const c of conLista) opciones.push(el("option", `Lista de salida oficial: ${c.nombre} (${formatearFecha(c.fecha)}) · ${c.participantes} participantes`, { value: `c:${c.id}` }));
-  for (const p of pruebas) opciones.push(el("option", `Prueba anterior: ${nombreConCategoria(p)} (${formatearFecha(p.fecha)})`, { value: p.id }));
+  for (const p of pruebas) opciones.push(el("option", `Prueba anterior: ${p.nombre} (${formatearFecha(p.fecha)})`, { value: p.id }));
   selector.replaceChildren(...opciones);
   const aguilas = pruebas.find((p) => normalizar(p.nombre).includes("aguilas"));
   if (!elegirPorDefecto && opciones.some((o) => o.value === anterior)) selector.value = anterior;
