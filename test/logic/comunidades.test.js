@@ -18,6 +18,8 @@ test("catálogo: 19 territorios, códigos y alias sin repetirse, y se reconocen 
   assert.equal(comunidadDeFederacion(" mad ").nombre, "Comunidad de Madrid");
   assert.equal(comunidadDeFederacion("Andalucía").nombre, "Andalucía");
   assert.equal(comunidadDeFederacion("CV").nombre, "Comunitat Valenciana");
+  // En los Excel reales Canarias aparece como CAN y como CNA (los mismos atletas con los dos códigos); Cantabria como CNT.
+  assert.deepEqual(["CAN", "CNA", "CNT", "PVA"].map((c) => comunidadDeFederacion(c).nombre), ["Canarias", "Canarias", "Cantabria", "País Vasco"]);
   assert.equal(comunidadDeFederacion("XXX"), null);
   assert.equal(comunidadDeFederacion(null), null);
 });

@@ -46,7 +46,7 @@ export const COMUNIDADES = Object.freeze([
   { nombre: "Aragón", codigo: "ARA", alias: ["ARAGON"] },
   { nombre: "Asturias", codigo: "AST", alias: ["ASTU", "PRINCIPADO DE ASTURIAS"] },
   { nombre: "Illes Balears", codigo: "BAL", alias: ["IB", "BALEARES", "ISLAS BALEARES"] },
-  { nombre: "Canarias", codigo: "CAN", alias: ["CNR", "ICA", "ISLAS CANARIAS"] },
+  { nombre: "Canarias", codigo: "CAN", alias: ["CNA", "CNR", "ICA", "ISLAS CANARIAS"] },
   { nombre: "Cantabria", codigo: "CNT", alias: ["CANT", "CTB"] },
   { nombre: "Castilla-La Mancha", codigo: "CLM", alias: ["CM", "CASTILLA LA MANCHA"] },
   { nombre: "Castilla y León", codigo: "CYL", alias: ["CL", "CLE", "CASTILLA Y LEON"] },
