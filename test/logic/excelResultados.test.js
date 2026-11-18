@@ -16,7 +16,7 @@ test("lee finalistas con posición, tiempo total y los 5 parciales", async () =>
   const { resultados, descartadas } = await leerResultados(buffer);
   assert.equal(descartadas.length, 0);
   assert.deepEqual(resultados[0], {
-    dorsal: "1", nombre: "Ana López", anioNacimiento: 1995, club: "Club Uno",
+    dorsal: "1", nombre: "Ana López", anioNacimiento: 1995, club: "Club Uno", federacion: "MAD",
     posicion: 1, estado: "finalizado", tiempoTotal: 3120, parciales: [840, 20, 1800, 20, 420], avisos: [],
   });
 });

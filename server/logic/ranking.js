@@ -2,7 +2,7 @@
 // con los mismos resultados siempre da el mismo ranking. La fórmula está en docs/ranking-elo.md.
 import { randomUUID } from "node:crypto";
 import { ErrorLogica } from "./errores.js";
-import { DEPORTES, cuentaParaElo } from "./catalogos.js";
+import { DEPORTES, COMUNIDADES, cuentaParaElo, nombreComunidad } from "./catalogos.js";
 import { RATING_INICIAL, actualizarCarrera } from "./elo.js";
 
 const TAMANO_MAXIMO = 100;
@@ -54,6 +54,7 @@ export function crearServicioRanking({ repos, usuarios, log = { info() {} } }) {
             rating: despues,
             pruebas: (previo?.pruebas ?? 0) + 1,
             clubId: r.clubId ?? previo?.clubId,
+            federacion: r.federacion ?? previo?.federacion,
             ultimaFecha: prueba.fecha,
           });
           historial.push({
@@ -67,7 +68,7 @@ export function crearServicioRanking({ repos, usuarios, log = { info() {} } }) {
       await repos.historialElo.eliminarPor({ deporte });
       await repos.ratings.crearVarios([...actual].map(([atletaId, v]) => ({
         id: randomUUID(), deporte, atletaId, rating: v.rating, pruebas: v.pruebas,
-        ...(v.clubId ? { clubId: v.clubId } : {}), ...(sexoDe.get(atletaId) ? { sexo: sexoDe.get(atletaId) } : {}), ultimaFecha: v.ultimaFecha,
+        ...(v.clubId ? { clubId: v.clubId } : {}), ...(v.federacion ? { federacion: v.federacion } : {}), ...(sexoDe.get(atletaId) ? { sexo: sexoDe.get(atletaId) } : {}), ultimaFecha: v.ultimaFecha,
       })));
       await repos.historialElo.crearVarios(historial);
       log.info("Ranking recalculado", { deporte, pruebas: pruebasCalculadas, atletas: actual.size });
@@ -75,15 +76,16 @@ export function crearServicioRanking({ repos, usuarios, log = { info() {} } }) {
     },
 
     // Ranking paginado, de mayor a menor rating. minPruebas deja fuera a quien ha corrido pocas.
-    async ranking(deporte, { pagina, tamano, minPruebas, sexo } = {}) {
+    async ranking(deporte, { pagina, tamano, minPruebas, sexo, comunidad } = {}) {
       exigirDeporte(deporte);
+      if (comunidad && !COMUNIDADES.some((c) => c.nombre === comunidad)) throw new ErrorLogica("DATOS_INVALIDOS", "La comunidad autónoma no existe");
       if (sexo && !SEXOS.includes(sexo)) throw new ErrorLogica("DATOS_INVALIDOS", "El sexo debe ser M o F");
       const p = entero(pagina, 1, "La página", 1);
       const t = entero(tamano, 50, "El tamaño", 1, TAMANO_MAXIMO);
       const minimo = entero(minPruebas, 1, "El mínimo de pruebas", 1);
 
       const todos = (await repos.ratings.listar({ deporte }))
-        .filter((r) => r.pruebas >= minimo && (!sexo || r.sexo === sexo))
+        .filter((r) => r.pruebas >= minimo && (!sexo || r.sexo === sexo) && (!comunidad || nombreComunidad(r.federacion) === comunidad))
         .sort((a, b) => b.rating - a.rating || b.pruebas - a.pruebas || a.atletaId.localeCompare(b.atletaId));
       const desde = (p - 1) * t;
       const filas = await Promise.all(todos.slice(desde, desde + t).map(async (r, i) => {
@@ -92,6 +94,7 @@ export function crearServicioRanking({ repos, usuarios, log = { info() {} } }) {
           posicion: desde + i + 1,
           atleta: { id: atleta.id, nombre: atleta.nombre },
           club: club ? { id: club.id, nombre: club.nombre } : null,
+          comunidad: nombreComunidad(r.federacion),
           rating: Math.round(r.rating),
           pruebas: r.pruebas,
         };

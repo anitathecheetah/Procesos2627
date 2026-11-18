@@ -1,7 +1,7 @@
 // Consultas públicas de pruebas, clasificaciones y atletas. Solo lectura.
 import { ErrorLogica } from "./errores.js";
 import { normalizarNombre } from "./normalizacion.js";
-import { DEPORTES, ESTADOS_RESULTADO } from "./catalogos.js";
+import { DEPORTES, ESTADOS_RESULTADO, nombreComunidad } from "./catalogos.js";
 
 const MAX_BUSQUEDA = 50;
 const ORDEN_ESTADO = { [ESTADOS_RESULTADO.FINALIZADO]: 0, [ESTADOS_RESULTADO.DQ]: 1, [ESTADOS_RESULTADO.DNF]: 2, [ESTADOS_RESULTADO.DNS]: 3 };
@@ -84,6 +84,7 @@ export function crearServicioConsulta({ repos }) {
           ...(r.revisar ? { revisar: r.revisar } : {}),
           atleta: { id: a.id, nombre: a.nombre, anioNacimiento: a.anioNacimiento },
           club: resumenClub(await club(r.clubId)),
+          comunidad: nombreComunidad(r.federacion),
           sanciones: resumenSanciones(sanciones.filter((s) => s.resultadoId === r.id)),
           elo: resumenElo(eloDe.get(r.atletaId)),
         };

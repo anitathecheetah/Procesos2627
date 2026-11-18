@@ -90,7 +90,13 @@ export function mostrarDetallePrueba({ prueba, clasificacion, mejoresSegmentos }
   selector.append(el("option", "Posición", { value: "posicion" }));
   nombres.forEach((n, i) => selector.append(el("option", `Mejor tiempo de ${n}`, { value: String(i) })));
   ordenar.append(selector);
-  filtros.append(campo("Atleta", "atleta", "Nombre o apellidos"), campo("Club", "club", "Nombre del club"), ordenar);
+  // Comunidades que aparecen en esta prueba (la de la licencia federativa de cada atleta).
+  const comunidades = [...new Set(clasificacion.map((f) => f.comunidad).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
+  const filtroComunidad = el("label", "Comunidad de la licencia");
+  const selectorComunidad = el("select", undefined, { name: "comunidad" });
+  selectorComunidad.append(el("option", "Todas", { value: "" }), ...comunidades.map((c) => el("option", c, { value: c })));
+  filtroComunidad.append(selectorComunidad);
+  filtros.append(campo("Atleta", "atleta", "Nombre o apellidos"), campo("Club", "club", "Nombre del club"), ...(comunidades.length ? [filtroComunidad] : []), ordenar);
   filtros.addEventListener("submit", (e) => e.preventDefault());
 
   const pintar = () => {
@@ -108,6 +114,7 @@ export function mostrarDetallePrueba({ prueba, clasificacion, mejoresSegmentos }
         fila.estado === "finalizado" ? fila.posicion : "—",
         enlace(fila.atleta.nombre, () => alElegirAtleta(fila.atleta)),
         fila.club?.nombre ?? "",
+        fila.comunidad ?? "",
         fila.dorsal,
         fila.estado === "finalizado" ? formatearTiempo(fila.tiempoTotal) : estado,
         ...tiempos,
@@ -117,7 +124,7 @@ export function mostrarDetallePrueba({ prueba, clasificacion, mejoresSegmentos }
     });
     contenedor.replaceChildren(
       el("p", `${visibles.length} de ${clasificacion.length} resultados`, { className: "suave" }),
-      tabla(["Pos.", "Atleta", "Club", "Dorsal", "Tiempo", ...nombres, "Elo", "Notas"], filas),
+      tabla(["Pos.", "Atleta", "Club", "Licencia", "Dorsal", "Tiempo", ...nombres, "Elo", "Notas"], filas),
     );
   };
   filtros.addEventListener("input", pintar);

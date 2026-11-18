@@ -46,3 +46,15 @@ test("marca al que tiene el mejor tiempo del segmento", () => {
   assert.equal(esMejorSegmento(mejores, 2, clasificacion[0]), true);
   assert.equal(esMejorSegmento(undefined, 0, clasificacion[0]), false);
 });
+
+test("filtra por comunidad de la licencia (nombre exacto) y se combina con el resto", () => {
+  const c = [
+    { atleta: { id: "a", nombre: "Ana" }, club: { nombre: "Uno" }, comunidad: "Cataluña", estado: "finalizado", parciales: [1, 1, 1, 1, 1] },
+    { atleta: { id: "b", nombre: "Beto" }, club: { nombre: "Uno" }, comunidad: "Comunidad de Madrid", estado: "finalizado", parciales: [1, 1, 1, 1, 1] },
+    { atleta: { id: "c", nombre: "Carla" }, club: { nombre: "Dos" }, comunidad: null, estado: "finalizado", parciales: [1, 1, 1, 1, 1] },
+  ];
+  assert.deepEqual(filtrarClasificacion(c, { comunidad: "Cataluña" }).map((f) => f.atleta.id), ["a"]);
+  assert.deepEqual(filtrarClasificacion(c, { comunidad: "" }).map((f) => f.atleta.id), ["a", "b", "c"]);
+  assert.deepEqual(filtrarClasificacion(c, { comunidad: "Comunidad de Madrid", club: "uno" }).map((f) => f.atleta.id), ["b"]);
+  assert.deepEqual(filtrarClasificacion(c, { comunidad: "Galicia" }), []);
+});
