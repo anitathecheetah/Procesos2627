@@ -42,6 +42,6 @@ Devuelve `{ deporte, simulaciones, retrospectiva, base, errorMedio?, filas }`; c
 
 En la web está en la tarjeta **Predicción de una carrera**; al abrirla ya viene elegida la prueba de Águilas más reciente.
 
-## Selector de sexo y categoría de las pruebas
+## Selector de sexo
 
-Las pruebas anteriores se muestran con su categoría («Élite masculino», «Élite femenino»), para distinguir las dos carreras de una misma prueba. El selector **Sexo** filtra esa lista (y el ranking cuando no se elige prueba) y se puede cambiar siempre; con «Todos» salen todas. Una prueba sin categoría reconocible se muestra con cualquier sexo. La lógica está en `client/js/categorias.js`.
+La lista de pruebas anteriores no muestra la categoría: sale una sola vez cada prueba, y el selector **Sexo** decide si es la carrera masculina o la femenina (la lista se repinta al cambiarlo, conservando la prueba elegida). Con «Todos» salen las dos. También filtra el ranking cuando no se elige prueba. Una prueba sin categoría reconocible se muestra con cualquier sexo. En la lista de Carreras, donde no hay filtro, sí se muestra la categoría («Élite femenino»). La lógica está en `client/js/categorias.js`.
