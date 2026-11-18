@@ -24,15 +24,17 @@ export function construirSplits(clasificacion) {
   }));
 }
 
+// Cómo sacar el valor por el que se ordena cada columna; las columnas 0..4 son segmentos y no están en la tabla.
+const VALOR_DE_COLUMNA = {
+  nombre: (f) => f.nombre,
+  club: (f) => f.club,
+  total: (f) => f.total,
+  posicion: (f) => f.posicion,
+};
+
 // columna: "posicion" | "nombre" | "club" | "total" | 0..4 (segmento). Lo que no tiene dato va siempre al final.
 export function ordenarSplits(filas, columna = "posicion", descendente = false) {
-  const valor = (f) => {
-    if (columna === "nombre") return f.nombre;
-    if (columna === "club") return f.club;
-    if (columna === "total") return f.total;
-    if (columna === "posicion") return f.posicion;
-    return f.tiempos[columna];
-  };
+  const valor = VALOR_DE_COLUMNA[columna] ?? ((f) => f.tiempos[columna]);
   const signo = descendente ? -1 : 1;
   return filas.map((f, k) => ({ f, k, v: valor(f) })).sort((a, b) => {
     const faltaA = a.v === null || a.v === undefined || a.v === "";

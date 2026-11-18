@@ -5,18 +5,15 @@ const GEOCODIFICACION = "https://geocoding-api.open-meteo.com/v1/search";
 const PREVISION = "https://api.open-meteo.com/v1/forecast";
 export const DIAS_DE_PREVISION = 16;
 
-// Códigos WMO que usa Open-Meteo.
-export function describirCodigo(codigo) {
-  if (codigo === 0) return "Despejado";
-  if (codigo <= 2) return "Poco nuboso";
-  if (codigo === 3) return "Nublado";
-  if (codigo === 45 || codigo === 48) return "Niebla";
-  if (codigo >= 51 && codigo <= 57) return "Llovizna";
-  if ((codigo >= 61 && codigo <= 67) || (codigo >= 80 && codigo <= 82)) return "Lluvia";
-  if ((codigo >= 71 && codigo <= 77) || codigo === 85 || codigo === 86) return "Nieve";
-  if (codigo >= 95) return "Tormenta";
-  return "Variable";
-}
+// Códigos WMO que usa Open-Meteo: [desde, hasta, texto]. El primer tramo que contiene el código da el texto.
+const DESCRIPCIONES = [
+  [0, 0, "Despejado"], [1, 2, "Poco nuboso"], [3, 3, "Nublado"],
+  [45, 45, "Niebla"], [48, 48, "Niebla"],
+  [51, 57, "Llovizna"], [61, 67, "Lluvia"], [80, 82, "Lluvia"],
+  [71, 77, "Nieve"], [85, 86, "Nieve"],
+  [95, Infinity, "Tormenta"],
+];
+export const describirCodigo = (codigo) => DESCRIPCIONES.find(([desde, hasta]) => codigo >= desde && codigo <= hasta)?.[2] ?? "Variable";
 
 export function crearServicioMeteo({ fetchExterno = globalThis.fetch, tiempoMaximoMs = 5000, duracionCacheMs = 3_600_000, ahora = () => Date.now() } = {}) {
   const cache = new Map();

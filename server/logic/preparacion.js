@@ -15,32 +15,48 @@ const articulo = (nombre, motivo, consulta) => ({ nombre, motivo, enlace: buscar
 
 // Reglas sencillas y explicadas, no una base de productos: dicen QUÉ conviene y por qué, y enlazan a una búsqueda
 // para comparar reseñas actuales. No se citan productos ni valoraciones concretas porque no se pueden verificar aquí.
+// Cada regla dice cuándo se aplica y qué artículos aporta; el orden de la lista es el orden de las recomendaciones.
+// Para añadir una recomendación basta con añadir una regla. `tiempo` es null si no hay previsión.
+const REGLAS = [
+  {
+    aplica: ({ tiempo: t }) => t && (t.tMin <= 8 || t.tMax <= 14),
+    articulos: ({ deporte, tiempo: t }) => [
+      articulo("Camiseta térmica o manga larga bajo el mono", `Mínima de ${t.tMin} °C: en la bici el viento enfría mucho más.`, `camiseta térmica ${nombreDeporte(deporte)} manga larga`),
+      articulo("Guantes finos y calcetines", "Con frío las manos y los pies son lo primero que se pierde.", "guantes ciclismo finos primavera"),
+    ],
+  },
+  {
+    aplica: ({ tiempo: t }) => t && t.tMax >= 27,
+    articulos: ({ tiempo: t }) => [
+      articulo("Gorra o visera y crema solar resistente al agua", `Máxima de ${t.tMax} °C.`, "crema solar deportiva resistente al agua"),
+      articulo("Sales o electrolitos y bidón extra", "Con calor se pierden muchas sales: hidratarse solo con agua no basta.", "sales electrolitos deporte resistencia"),
+    ],
+  },
+  {
+    aplica: ({ tiempo: t }) => t && t.probLluvia != null && t.probLluvia >= 40,
+    articulos: ({ tiempo: t }) => [articulo("Gafas con lente transparente y cortavientos ligero", `Probabilidad de lluvia del ${t.probLluvia}%.`, "cortavientos ligero impermeable ciclismo")],
+  },
+  {
+    aplica: ({ tiempo: t }) => t && t.vientoKmh != null && t.vientoKmh >= 30,
+    articulos: ({ tiempo: t }) => [articulo("Revisar ruedas de perfil alto", `Viento de hasta ${t.vientoKmh} km/h: las ruedas altas desestabilizan la bici.`, "ruedas perfil bajo viento lateral triatlón")],
+  },
+  {
+    aplica: () => true,
+    articulos: () => [articulo("Geles o barritas para la bici", "Practica la nutrición en los entrenos: no estrenes nada el día de la carrera.", "gel energético triatlón reseñas")],
+  },
+  {
+    aplica: ({ deporte }) => deporte === "triatlon",
+    articulos: () => [
+      articulo("Neopreno", "Comprueba en el reglamento si es obligatorio o está permitido según la temperatura del agua.", "neopreno triatlón reglamento temperatura agua"),
+      articulo("Antiempañante para las gafas de natación", "Evita perder referencias en la natación.", "antiempañante gafas natación"),
+    ],
+  },
+];
+const nombreDeporte = (deporte) => (deporte === "triatlon" ? "triatlón" : "duatlón");
+
 export function recomendarMaterial({ deporte, tiempo }) {
-  const r = [];
-  const ropa = deporte === "triatlon" ? "triatlón" : "duatlón";
-  if (tiempo) {
-    const { tMin, tMax, probLluvia, vientoKmh } = tiempo;
-    if (tMin <= 8 || tMax <= 14) {
-      r.push(articulo("Camiseta térmica o manga larga bajo el mono", `Mínima de ${tMin} °C: en la bici el viento enfría mucho más.`, `camiseta térmica ${ropa} manga larga`));
-      r.push(articulo("Guantes finos y calcetines", "Con frío las manos y los pies son lo primero que se pierde.", "guantes ciclismo finos primavera"));
-    }
-    if (tMax >= 27) {
-      r.push(articulo("Gorra o visera y crema solar resistente al agua", `Máxima de ${tMax} °C.`, "crema solar deportiva resistente al agua"));
-      r.push(articulo("Sales o electrolitos y bidón extra", "Con calor se pierden muchas sales: hidratarse solo con agua no basta.", "sales electrolitos deporte resistencia"));
-    }
-    if (probLluvia != null && probLluvia >= 40) {
-      r.push(articulo("Gafas con lente transparente y cortavientos ligero", `Probabilidad de lluvia del ${probLluvia}%.`, "cortavientos ligero impermeable ciclismo"));
-    }
-    if (vientoKmh != null && vientoKmh >= 30) {
-      r.push(articulo("Revisar ruedas de perfil alto", `Viento de hasta ${vientoKmh} km/h: las ruedas altas desestabilizan la bici.`, "ruedas perfil bajo viento lateral triatlón"));
-    }
-  }
-  r.push(articulo("Geles o barritas para la bici", "Practica la nutrición en los entrenos: no estrenes nada el día de la carrera.", "gel energético triatlón reseñas"));
-  if (deporte === "triatlon") {
-    r.push(articulo("Neopreno", "Comprueba en el reglamento si es obligatorio o está permitido según la temperatura del agua.", "neopreno triatlón reglamento temperatura agua"));
-    r.push(articulo("Antiempañante para las gafas de natación", "Evita perder referencias en la natación.", "antiempañante gafas natación"));
-  }
-  return r;
+  const contexto = { deporte, tiempo };
+  return REGLAS.filter((regla) => regla.aplica(contexto)).flatMap((regla) => regla.articulos(contexto));
 }
 
 export function crearServicioPreparacion({ repos, meteo, hoy = hoyEnEspana }) {
