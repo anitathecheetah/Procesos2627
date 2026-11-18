@@ -33,6 +33,31 @@ const minutosSegundos = (segundos) => {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 };
 
+// Cada tipo de ritmo reúne lo que lo distingue: cómo se calcula, cómo se escribe, entre qué valores es creíble de media
+// (de élite a popular) y cuál es el típico (para elegir el formato que mejor encaja con los tiempos).
+// Añadir un tipo nuevo (p. ej. «remo») es añadir una entrada, sin tocar las funciones de abajo.
+// nado: s/100 m · bici: km/h · carrera: s/km. «distancia» va en metros y «segundos» es el tiempo del segmento.
+const TIPOS_DE_RITMO = Object.freeze({
+  nado: {
+    calcular: (segundos, distancia) => segundos / (distancia / 100),
+    escribir: (v) => `${minutosSegundos(v)}/100 m`,
+    realista: [50, 200],
+    tipico: 85,
+  },
+  bici: {
+    calcular: (segundos, distancia) => distancia / 1000 / (segundos / 3600),
+    escribir: (v) => `${v.toFixed(1).replace(".", ",")} km/h`,
+    realista: [18, 55],
+    tipico: 36,
+  },
+  carrera: {
+    calcular: (segundos, distancia) => segundos / (distancia / 1000),
+    escribir: (v) => `${minutosSegundos(v)}/km`,
+    realista: [150, 540],
+    tipico: 230,
+  },
+});
+
 // Tipo de ritmo de un segmento: "nado" | "bici" | "carrera" | null.
 export function tipoDeRitmo(deporte, i) {
   if (!DISTANCIAS[deporte] || DISTANCIA_DEL_SEGMENTO[i] === null || DISTANCIA_DEL_SEGMENTO[i] === undefined) return null;
@@ -45,27 +70,14 @@ export function ritmoNumerico(deporte, i, segundos, metros) {
   const tipo = tipoDeRitmo(deporte, i);
   if (!tipo || !Array.isArray(metros) || typeof segundos !== "number" || !(segundos > 0)) return null;
   const distancia = metros[DISTANCIA_DEL_SEGMENTO[i]];
-  if (!(distancia > 0)) return null;
-  if (tipo === "nado") return segundos / (distancia / 100);
-  if (tipo === "bici") return distancia / 1000 / (segundos / 3600);
-  return segundos / (distancia / 1000);
+  return distancia > 0 ? TIPOS_DE_RITMO[tipo].calcular(segundos, distancia) : null;
 }
 
 // Texto del ritmo ("1:17/100 m", "38,8 km/h", "3:23/km") o "" si no hay (transición, sin tiempo o sin distancias).
 export function textoRitmo(deporte, i, segundos, metros) {
   const valor = ritmoNumerico(deporte, i, segundos, metros);
-  if (valor === null) return "";
-  const tipo = tipoDeRitmo(deporte, i);
-  if (tipo === "nado") return `${minutosSegundos(valor)}/100 m`;
-  if (tipo === "bici") return `${valor.toFixed(1).replace(".", ",")} km/h`;
-  return `${minutosSegundos(valor)}/km`;
+  return valor === null ? "" : TIPOS_DE_RITMO[tipoDeRitmo(deporte, i)].escribir(valor);
 }
-
-// Ritmos medios que se pueden dar por buenos (de élite a popular). Fuera de estos rangos las distancias elegidas
-// no pueden ser las de la prueba. Nado en s/100 m, bici en km/h, carrera en s/km.
-const REALISTA = { nado: [50, 200], bici: [18, 55], carrera: [150, 540] };
-// Ritmo medio típico, para elegir el formato que mejor encaja con los tiempos.
-const TIPICO = { nado: 85, bici: 36, carrera: 230 };
 
 const SEGMENTOS_CON_RITMO = [0, 2, 4];
 
@@ -75,7 +87,7 @@ export function ritmosRealistas(deporte, medias, metros) {
   return SEGMENTOS_CON_RITMO.every((i) => {
     const v = ritmoNumerico(deporte, i, medias?.[i], metros);
     if (v === null) return true;
-    const [min, max] = REALISTA[tipoDeRitmo(deporte, i)];
+    const [min, max] = TIPOS_DE_RITMO[tipoDeRitmo(deporte, i)].realista;
     return v >= min && v <= max;
   });
 }
@@ -92,7 +104,7 @@ export function sugerirDistancias(deporte, medias) {
       const v = ritmoNumerico(deporte, i, medias[i], p.metros);
       if (v === null) continue;
       datos++;
-      desvio += Math.log(v / TIPICO[tipoDeRitmo(deporte, i)]) ** 2;
+      desvio += Math.log(v / TIPOS_DE_RITMO[tipoDeRitmo(deporte, i)].tipico) ** 2;
     }
     if (datos && (mejor === null || desvio < mejor.desvio)) mejor = { clave, desvio };
   }
