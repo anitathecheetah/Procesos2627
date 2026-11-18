@@ -8,6 +8,7 @@ import "./resultados.js";
 import "./prediccion.js";
 import { mostrarBotonRecalcular } from "./ranking.js";
 import { alCambiarSesion } from "./convocatorias.js";
+import { iniciarNavegacion, alCambiarSesionNavegacion } from "./navegacion.js";
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -21,11 +22,15 @@ function textoDeError(error) {
 
 let usuarioActual = null;
 
+// La navegación arranca antes de consultar la sesión, para que la página no quede en blanco mientras responde el servidor.
+iniciarNavegacion();
+
 // Muestra la sesión y, si la persona es administradora, el panel de usuarios.
 async function mostrarSesionCompleta(usuario) {
   usuarioActual = usuario;
   mostrarBotonRecalcular(usuario?.rol === "admin");
   mostrarSesion(usuario);
+  alCambiarSesionNavegacion(usuario);
   await alCambiarSesion(usuario);
   if (usuario?.rol === "admin") await cargarAdministracion();
   else mostrarAdministracion(null);
