@@ -1,5 +1,6 @@
 // Presentación de resultados: solo construye el DOM. No hace peticiones (eso es api.js).
 // Todo el texto entra con textContent, nunca como HTML.
+import { nombreConCategoria } from "./categorias.js";
 import { NOMBRES_PARCIALES } from "./parciales.js";
 import { filtrarClasificacion, esMejorSegmento } from "./filtrosResultados.js";
 import { textoElo } from "./elo.js";
@@ -28,7 +29,7 @@ export function mostrarPruebas(pruebas, alElegir) {
   lista.replaceChildren(...pruebas.map((p) => {
     const li = el("li");
     li.append(
-      enlace(p.nombre, () => alElegir(p)),
+      enlace(nombreConCategoria(p), () => alElegir(p)),
       el("span", ` · ${formatearFecha(p.fecha)} · ${DEPORTES[p.deporte] ?? p.deporte} · ${p.participantes} participantes`, { className: "suave" }),
     );
     return li;
