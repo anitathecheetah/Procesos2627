@@ -7,26 +7,28 @@
   <link rel="stylesheet" href="/css/estilos.css">
 </head>
 <body>
+  <div class="app">
+  <header class="barra-superior">
+    <button id="boton-menu" class="boton-menu" type="button" aria-controls="barra-lateral" aria-expanded="false" aria-label="Menú">☰</button>
+    <span class="marca-superior">Procesos 26-27</span>
+  </header>
+  <aside id="barra-lateral" class="barra-lateral">
+    <a class="marca" href="#/inicio">Procesos 26-27</a>
+    <nav aria-label="Secciones">
+      <ul id="menu-secciones" class="menu"></ul>
+    </nav>
+    <p id="estado" class="estado">Comprobando el servidor...</p>
+  </aside>
   <main>
-    <h1>Procesos 26-27</h1>
-    <p class="subtitulo">Crea tu cuenta o inicia sesión.</p>
     <p id="aviso-global" class="mensaje" role="status"></p>
 
-    <section id="zona-sesion" class="tarjeta" hidden>
-      <h2>Sesión iniciada</h2>
-      <p id="usuario-sesion"></p>
-      <button id="boton-salir" type="button">Salir</button>
-      <button id="boton-eliminar-cuenta" type="button">Eliminar mi cuenta</button>
-      <form id="form-password" novalidate>
-        <h3>Cambiar contraseña</h3>
-        <label>Contraseña actual <input name="actual" type="password" autocomplete="current-password" required></label>
-        <label>Contraseña nueva (mínimo 10 caracteres, un número y una mayúscula) <input name="nueva" type="password" autocomplete="new-password" required></label>
-        <label>Repite la contraseña nueva <input name="repetida" type="password" autocomplete="new-password" required></label>
-        <button type="submit">Cambiar contraseña</button>
-        <p class="mensaje" role="status"></p>
-      </form>
-    </section>
+    <div class="panel" data-seccion="inicio" hidden>
+      <h1>Procesos 26-27</h1>
+      <p class="subtitulo">Rankings Elo de duatlón y triatlón en España.</p>
+      <p class="suave">Usa el menú de la izquierda para ver las carreras, los rankings, la predicción y las próximas carreras.</p>
+    </div>
 
+    <div class="panel" data-seccion="admin" hidden>
     <section id="zona-admin" class="tarjeta" hidden>
       <h2>Administración de usuarios</h2>
       <table id="tabla-usuarios">
@@ -35,7 +37,9 @@
       </table>
       <p id="aviso-admin" class="mensaje" role="status"></p>
     </section>
+    </div>
 
+    <div class="panel" data-seccion="proximas" hidden>
     <section id="zona-convocatorias" class="tarjeta">
       <h2>Próximas carreras</h2>
       <p class="suave">Apúntate a las carreras a las que vas a ir. Cuando la federación publique el listado real, el administrador lo compara con los apuntados.</p>
@@ -53,7 +57,9 @@
       <p id="aviso-convocatorias" class="mensaje" role="status"></p>
       <div id="detalle-convocatoria"></div>
     </section>
+    </div>
 
+    <div class="panel" data-seccion="rankings" hidden>
     <section id="zona-ranking" class="tarjeta">
       <h2>Ranking Elo</h2>
       <details class="explicacion">
@@ -104,7 +110,9 @@
       <button id="ranking-recalcular" type="button" hidden>Recalcular el ranking</button>
       <p id="aviso-ranking" class="mensaje" role="status"></p>
     </section>
+    </div>
 
+    <div class="panel" data-seccion="prediccion" hidden>
     <section id="zona-prediccion" class="tarjeta">
       <h2>Predicción de una carrera</h2>
       <details class="explicacion">
@@ -140,7 +148,9 @@
       <p id="aviso-prediccion" class="mensaje" role="status"></p>
       <div id="prediccion-resultado"></div>
     </section>
+    </div>
 
+    <div class="panel" data-seccion="carreras" hidden>
     <section id="zona-resultados" class="tarjeta">
       <h2>Resultados</h2>
       <div id="vista-pruebas">
@@ -160,6 +170,23 @@
       </div>
       <div id="vista-detalle" hidden></div>
       <p id="aviso-resultados" class="mensaje" role="status"></p>
+    </section>
+    </div>
+
+<div class="panel" data-seccion="cuenta" hidden>
+    <section id="zona-sesion" class="tarjeta" hidden>
+      <h2>Sesión iniciada</h2>
+      <p id="usuario-sesion"></p>
+      <button id="boton-salir" type="button">Salir</button>
+      <button id="boton-eliminar-cuenta" type="button">Eliminar mi cuenta</button>
+      <form id="form-password" novalidate>
+        <h3>Cambiar contraseña</h3>
+        <label>Contraseña actual <input name="actual" type="password" autocomplete="current-password" required></label>
+        <label>Contraseña nueva (mínimo 10 caracteres, un número y una mayúscula) <input name="nueva" type="password" autocomplete="new-password" required></label>
+        <label>Repite la contraseña nueva <input name="repetida" type="password" autocomplete="new-password" required></label>
+        <button type="submit">Cambiar contraseña</button>
+        <p class="mensaje" role="status"></p>
+      </form>
     </section>
 
     <div class="formularios" id="zona-formularios">
@@ -184,9 +211,10 @@
         </form>
       </section>
     </div>
+    </div>
 
-    <p id="estado">Comprobando el servidor...</p>
   </main>
+  </div>
   <script type="module" src="/js/main.js"></script>
 </body>
 </html>
