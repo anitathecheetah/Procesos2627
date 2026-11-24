@@ -18,6 +18,37 @@ export function crearServicioDirectores({ repos, usuarios, dominio, catalogo = c
   const vigente = async (usuarioId) =>
     (await repos.solicitudesClub.listar({ usuarioId })).find((s) => s.estado !== ESTADOS_SOLICITUD.RECHAZADA) ?? null;
 
+  // Panel de un club con datos públicos de los resultados (lo ve su director y el administrador).
+  const panelDe = async (clubId) => {
+      const club = await repos.clubes.buscarPorId(clubId);
+      if (!club) throw new ErrorLogica("NO_ENCONTRADO", "El club ya no existe");
+      const resultados = await repos.resultados.listar({ clubId: club.id });
+      const nombres = new Map();
+      const nombreDe = async (atletaId) => {
+        if (!nombres.has(atletaId)) nombres.set(atletaId, (await repos.atletas.buscarPorId(atletaId))?.nombre ?? "—");
+        return nombres.get(atletaId);
+      };
+      const deportes = [];
+      for (const deporte of DEPORTES) {
+        const ratings = (await repos.ratings.listar({ deporte, clubId: club.id })).sort((a, b) => b.rating - a.rating);
+        if (!ratings.length) continue;
+        const top = await Promise.all(ratings.slice(0, 10).map(async (r) => ({ atletaId: r.atletaId, nombre: await nombreDe(r.atletaId), rating: Math.round(r.rating), pruebas: r.pruebas })));
+        deportes.push({ deporte, atletas: ratings.length, mediaElo: Math.round(ratings.reduce((t, r) => t + r.rating, 0) / ratings.length), top });
+      }
+      const pruebas = new Set(resultados.map((r) => r.pruebaId));
+      const atletas = new Set(resultados.map((r) => r.atletaId));
+      return {
+        club: { id: club.id, nombre: club.nombre },
+        atletas: atletas.size,
+        pruebas: pruebas.size,
+        resultados: resultados.length,
+        finalizados: resultados.filter((r) => r.estado === "finalizado").length,
+        deportes,
+        vacio: resultados.length === 0,
+        aviso: resultados.length ? null : "Todavía no hay resultados con el nombre de este club. Aparecerán cuando se importen pruebas en las que figure con ese nombre.",
+      };
+  };
+
   return {
     // Lista de clubes para elegir: los que ya existen en la app y los del catálogo de la FETRI que aún no están
     // (con id «fetri:…»), por orden alfabético. Un club del catálogo ya existente sale una sola vez.
@@ -93,33 +124,27 @@ export function crearServicioDirectores({ repos, usuarios, dominio, catalogo = c
     async panel(usuarioId) {
       const s = (await repos.solicitudesClub.listar({ usuarioId })).find((x) => x.estado === ESTADOS_SOLICITUD.APROBADA);
       if (!s) throw new ErrorLogica("PROHIBIDO", "No eres director de ningún club");
-      const club = await repos.clubes.buscarPorId(s.clubId);
-      if (!club) throw new ErrorLogica("NO_ENCONTRADO", "El club ya no existe");
-      const resultados = await repos.resultados.listar({ clubId: club.id });
-      const nombres = new Map();
-      const nombreDe = async (atletaId) => {
-        if (!nombres.has(atletaId)) nombres.set(atletaId, (await repos.atletas.buscarPorId(atletaId))?.nombre ?? "—");
-        return nombres.get(atletaId);
-      };
-      const deportes = [];
-      for (const deporte of DEPORTES) {
-        const ratings = (await repos.ratings.listar({ deporte, clubId: club.id })).sort((a, b) => b.rating - a.rating);
-        if (!ratings.length) continue;
-        const top = await Promise.all(ratings.slice(0, 10).map(async (r) => ({ atletaId: r.atletaId, nombre: await nombreDe(r.atletaId), rating: Math.round(r.rating), pruebas: r.pruebas })));
-        deportes.push({ deporte, atletas: ratings.length, mediaElo: Math.round(ratings.reduce((t, r) => t + r.rating, 0) / ratings.length), top });
+      return panelDe(s.clubId);
+    },
+
+    // Solo administrador: el mismo panel que ve el director, de cualquier club.
+    async panelAdmin(adminId, clubId) {
+      await usuarios.exigirAdministrador(adminId);
+      return panelDe(clubId);
+    },
+
+    // Solo administrador: todos los clubes de la app con cuántos atletas tienen resultados con su nombre.
+    async resumenClubes(adminId) {
+      await usuarios.exigirAdministrador(adminId);
+      const porClub = new Map();
+      for (const r of await repos.resultados.listar()) {
+        if (!r.clubId) continue;
+        if (!porClub.has(r.clubId)) porClub.set(r.clubId, new Set());
+        porClub.get(r.clubId).add(r.atletaId);
       }
-      const pruebas = new Set(resultados.map((r) => r.pruebaId));
-      const atletas = new Set(resultados.map((r) => r.atletaId));
-      return {
-        club: { id: club.id, nombre: club.nombre },
-        atletas: atletas.size,
-        pruebas: pruebas.size,
-        resultados: resultados.length,
-        finalizados: resultados.filter((r) => r.estado === "finalizado").length,
-        deportes,
-        vacio: resultados.length === 0,
-        aviso: resultados.length ? null : "Todavía no hay resultados con el nombre de este club. Aparecerán cuando se importen pruebas en las que figure con ese nombre.",
-      };
+      return (await repos.clubes.listar())
+        .map((c) => ({ id: c.id, nombre: c.nombre, atletas: porClub.get(c.id)?.size ?? 0 }))
+        .sort((x, y) => x.nombre.localeCompare(y.nombre, "es"));
     },
   };
 }

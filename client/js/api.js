@@ -46,6 +46,8 @@ export const eliminarUsuario = (id) => peticion("DELETE", `/usuarios/${id}`);
 export const perfilPropio = () => peticion("GET", "/usuarios/yo/perfil");
 export const guardarPerfil = (datos) => peticion("PUT", "/usuarios/yo/perfil", datos);
 export const clubesParaElegir = () => peticion("GET", "/clubes");
+export const resumenClubes = () => peticion("GET", "/clubes/resumen");
+export const panelClubAdmin = (id) => peticion("GET", `/clubes/${encodeURIComponent(id)}/panel`);
 export const solicitarDirector = (datos) => peticion("POST", "/directores/solicitudes", datos);
 export const miSolicitudDirector = () => peticion("GET", "/directores/solicitudes/yo");
 export const solicitudesPendientes = () => peticion("GET", "/directores/solicitudes");

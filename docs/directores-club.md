@@ -43,3 +43,8 @@ En «Solicitudes de director de club», cada solicitud cuyo club aún no existe 
 «Crear club nuevo» (o «Club del catálogo») o «Unir a: <club existente>». Sirve para el mismo club escrito de otra forma
 (p. ej. «TRIATLON ALBACETE RES» y «CLUB TRIATLÓN ALBACETE RES»): al aprobar, la solicitud queda asociada al club elegido y no se
 crea uno duplicado.
+
+## Pestaña «Clubes» (administrador)
+El administrador tiene una pestaña **Clubes** (solo visible para él) con un buscador de clubes y, al elegir uno, el mismo panel que vería su
+director (atletas, pruebas, resultados, Elo medio y mejores atletas por deporte). Usa solo datos públicos de los resultados.
+API (admin): `GET /api/clubes/resumen` (clubes con su nº de atletas) y `GET /api/clubes/:id/panel`.

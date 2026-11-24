@@ -8,6 +8,7 @@ export const SECCIONES = [
   { id: "prediccion", titulo: "Predicción", icono: "🔮" },
   { id: "proximas", titulo: "Próximas carreras", icono: "📅" },
   { id: "cuenta", titulo: "Mi perfil", icono: "👤" },
+  { id: "clubes", titulo: "Clubes", icono: "🏢", soloAdmin: true },
   { id: "admin", titulo: "Admin", icono: "🛠️", soloAdmin: true },
 ];
 
