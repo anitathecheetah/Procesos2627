@@ -62,6 +62,7 @@ export function crearApp({
   app.locals.usuarios = usuarios; // para tareas de arranque (index.js)
   const dominio = crearServicioDominio(dominioRepos);
   const importacion = crearServicioImportacion({ repos: dominioRepos, dominio, usuarios, log });
+  const perfil = crearServicioPerfil({ repos: dominioRepos });
   const sanciones = crearServicioSanciones({ repos: dominioRepos, usuarios, log });
   app.use("/api", crearRutasApi({
     usuarios,
@@ -70,9 +71,9 @@ export function crearApp({
     consulta: crearServicioConsulta({ repos: dominioRepos }),
     ranking: crearServicioRanking({ repos: dominioRepos, usuarios, log }),
     prediccion: crearServicioPrediccion({ repos: dominioRepos }),
-    convocatorias: crearServicioConvocatorias({ repos: dominioRepos, usuarios, dominio, log }),
+    convocatorias: crearServicioConvocatorias({ repos: dominioRepos, usuarios, perfil, dominio, log }),
     preparacion: crearServicioPreparacion({ repos: dominioRepos, meteo }),
-    perfil: crearServicioPerfil({ repos: dominioRepos }),
+    perfil,
     directores: crearServicioDirectores({ repos: dominioRepos, usuarios, dominio, log }),
     sesiones: crearServicioSesiones(repositorioSesiones),
     secreto,

@@ -119,15 +119,32 @@ export function mostrarAvisoConvocatorias(texto, correcto = false) {
   zona.dataset.correcto = String(correcto);
 }
 
+// «Mi bici»: se elige entre las bicis del perfil. Las que no valen para la carrera salen desactivadas con el motivo.
+function seccionBici(p, alElegirBici) {
+  const { material } = p;
+  const titulo = el("h4", "Mi bici para esta carrera");
+  if (!material.inscrito) return [titulo, el("p", "Apúntate a la carrera para elegir la bici que vas a usar.", { className: "suave" })];
+  if (!material.bicis.length) return [titulo, el("p", "Añade tus bicis en «Mi perfil» para poder elegirlas aquí.", { className: "suave" })];
+  const selector = el("select", undefined, { ariaLabel: "Bici que vas a usar" });
+  selector.append(el("option", "Sin elegir", { value: "" }), ...material.bicis.map((b) => {
+    const texto = `${b.nombre} (${b.tipo})${b.valida ? (b.aviso ? ` · ${b.aviso}` : "") : ` · no vale: ${b.motivo}`}`;
+    return el("option", texto, { value: b.nombre, disabled: !b.valida });
+  }));
+  selector.value = material.bici?.nombre ?? "";
+  selector.addEventListener("change", () => alElegirBici(p.carrera, selector.value));
+  return [titulo, selector];
+}
+
 // Cuenta atrás, previsión del tiempo y material recomendado de una carrera.
-export function mostrarPreparacion(p) {
+export function mostrarPreparacion(p, alElegirBici) {
   const nodos = [el("h3", `Preparar ${p.carrera.nombre}`), el("p", `${textoDias(p.diasRestantes)} · ${formatearFecha(p.carrera.fecha)}${p.carrera.lugar ? ` · ${p.carrera.lugar}` : ""}`, { className: "cuenta-atras" })];
   nodos.push(p.tiempo
     ? el("p", `Previsión: ${textoTiempo(p.tiempo)} (fuente: ${p.tiempo.fuente})`, { className: "prevision" })
     : el("p", p.sinPrevision ?? "", { className: "suave" }));
-  if (p.carrera.cross) nodos.push(el("p", "Modalidad cross: bici de montaña (MTB).", { className: "prevision" }));
-  else if (p.carrera.drafting) nodos.push(el("p", `Drafting: ${p.carrera.drafting}${p.carrera.drafting === "permitido" ? " (solo bici de ruta)" : ""}.`, { className: "prevision" }));
+  if (p.carrera.cross) nodos.push(el("p", "Modalidad: cross.", { className: "prevision" }));
+  else if (p.carrera.drafting) nodos.push(el("p", `Drafting: ${p.carrera.drafting}.`, { className: "prevision" }));
   if (p.carrera.neopreno) nodos.push(el("p", `Neopreno: ${p.carrera.neopreno}${p.carrera.neopreno === "prohibido" ? " (no podrás usarlo)" : ""}.`, { className: "prevision" }));
+  if (p.material) nodos.push(...seccionBici(p, alElegirBici));
   if (p.recomendaciones.length) {
     const ul = el("ul", undefined, { className: "lista" });
     p.recomendaciones.forEach((a) => {
@@ -143,25 +160,3 @@ export function mostrarPreparacion(p) {
   document.getElementById("detalle-convocatoria").replaceChildren(...nodos);
 }
 
-// Al pulsar «Me apunto»: pide el nombre y los dos apellidos (se reconoce a la persona en la lista de salida de la
-// federación por su nombre). Viene rellenado con el nombre de la cuenta.
-export function mostrarFormularioInscripcion(carrera, nombreCuenta, alConfirmar) {
-  const entrada = el("input", undefined, { type: "text", value: nombreCuenta ?? "", autocomplete: "name", required: true, maxLength: 100 });
-  const etiqueta = el("label", "Nombre y dos apellidos (como figura en la federación)");
-  etiqueta.append(entrada);
-  const aviso = el("p", undefined, { className: "mensaje", role: "alert" });
-  const confirmar = () => {
-    if (entrada.value.trim().split(/\s+/).filter(Boolean).length < 3) {
-      aviso.textContent = "Escribe tu nombre y tus dos apellidos.";
-      return entrada.focus();
-    }
-    alConfirmar(carrera, entrada.value);
-  };
-  entrada.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); confirmar(); } });
-  document.getElementById("detalle-convocatoria").replaceChildren(
-    el("h3", `Apuntarte a ${carrera.nombre}`),
-    el("p", "Se usa para reconocerte cuando la federación publique la lista de salida. Solo el administrador ve los nombres de los apuntados.", { className: "suave" }),
-    etiqueta, aviso, boton("Confirmar inscripción", confirmar, ""),
-  );
-  entrada.focus();
-}

@@ -148,8 +148,12 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
   }));
   // Apuntarse y desapuntarse: el usuario de la sesión.
   router.put("/convocatorias/:id/inscripcion", exigirSesion, manejar(async (req, res) => {
-    await convocatorias.apuntarse(req.usuarioId, req.params.id, req.body?.nombre);
+    await convocatorias.apuntarse(req.usuarioId, req.params.id);
     res.status(204).end();
+  }));
+  // Bici que usarás en la carrera (de las de tu perfil): { bici: "nombre" }, o "" para quitarla.
+  router.put("/convocatorias/:id/inscripcion/bici", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json({ bici: await convocatorias.elegirBici(req.usuarioId, req.params.id, req.body?.bici) });
   }));
   router.delete("/convocatorias/:id/inscripcion", exigirSesion, manejar(async (req, res) => {
     await convocatorias.desapuntarse(req.usuarioId, req.params.id);
@@ -168,7 +172,7 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
     res.status(200).json(await convocatorias.listaSalida(req.params.id));
   }));
   router.get("/convocatorias/:id/preparacion", manejar(async (req, res) => {
-    res.status(200).json(await preparacion.preparacion(req.params.id));
+    res.status(200).json(await preparacion.preparacion(req.params.id, req.usuarioId));
   }));
   router.get("/convocatorias/:id/asistencia", exigirSesion, manejar(async (req, res) => {
     res.status(200).json(await convocatorias.asistencia(req.usuarioId, req.params.id));

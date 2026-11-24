@@ -34,8 +34,14 @@ test("el admin crea, cualquiera lista, un usuario se apunta y el admin ve quién
     assert.deepEqual(publica.map((c) => [c.nombre, c.apuntados]), [["Duatlón Águilas 2027", 0]]);
     assert.ok(!("apuntado" in publica[0]), "sin sesión no se sabe si estás apuntado");
 
-    assert.equal((await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion`)).status, 400, "sin nombre completo no se apunta");
-    assert.equal((await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion`, { nombre: "Eva Gil Pérez" })).status, 204);
+    assert.equal((await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion`)).status, 400, "sin nombre completo en el perfil no se apunta");
+    assert.equal((await llamar(eva, "PUT", "/usuarios/yo/perfil", { nombre: "Eva", apellidos: "Gil Pérez", bicis: [{ nombre: "Ruta", tipo: "ruta" }] })).status, 200);
+    assert.equal((await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion`)).status, 204); // el nombre sale del perfil
+    assert.equal((await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion/bici`, { bici: "Ruta" })).status, 200);
+    assert.equal((await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion/bici`, { bici: "Otra" })).status, 400);
+    const prep = await (await llamar(eva, "GET", `/convocatorias/${id}/preparacion`)).json();
+    assert.deepEqual([prep.material.inscrito, prep.material.bici.nombre], [true, "Ruta"]);
+    assert.equal((await (await llamar(undefined, "GET", `/convocatorias/${id}/preparacion`)).json()).material, null);
     const conSesion = await (await llamar(eva, "GET", "/convocatorias")).json();
     assert.deepEqual([conSesion[0].apuntados, conSesion[0].apuntado], [1, true]);
 
@@ -55,7 +61,8 @@ test("el admin sube la lista de salida: cierra la carrera, es pública y se comp
     const admin = await entrar("admin@correo.es");
     const eva = await entrar("eva@correo.es");
     const { id } = await (await llamar(admin, "POST", "/convocatorias", DATOS)).json();
-    await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion`, { nombre: "Eva Gil Pérez" });
+    await llamar(eva, "PUT", "/usuarios/yo/perfil", { nombre: "Eva", apellidos: "Gil Pérez" });
+    await llamar(eva, "PUT", `/convocatorias/${id}/inscripcion`);
     const excel = await crearExcel([finalista("Eva Gil Pérez", 1995, "Club Uno", 1, 1, "00:52:00"), finalista("Beto Ruiz", 1990, "Club Dos", 2, 2, "00:53:00")]);
     const subir = (cookie) => fetch(`${url}/api/convocatorias/${id}/salida?sexo=F`, {
       method: "PUT", headers: { ...(cookie ? { Cookie: cookie } : {}), "Content-Type": "application/octet-stream" }, body: excel,

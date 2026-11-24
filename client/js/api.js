@@ -83,7 +83,8 @@ export const prediccion = (deporte, { base, convocatoria, sexo, retrospectiva } 
 export const listarConvocatorias = () => peticion("GET", "/convocatorias");
 export const crearConvocatoria = (datos) => peticion("POST", "/convocatorias", datos);
 export const eliminarConvocatoria = (id) => peticion("DELETE", `/convocatorias/${encodeURIComponent(id)}`);
-export const apuntarse = (id, nombre) => peticion("PUT", `/convocatorias/${encodeURIComponent(id)}/inscripcion`, { nombre });
+export const apuntarse = (id) => peticion("PUT", `/convocatorias/${encodeURIComponent(id)}/inscripcion`);
+export const elegirBici = (id, bici) => peticion("PUT", `/convocatorias/${encodeURIComponent(id)}/inscripcion/bici`, { bici });
 export const desapuntarse = (id) => peticion("DELETE", `/convocatorias/${encodeURIComponent(id)}/inscripcion`);
 export const apuntadosDe = (id) => peticion("GET", `/convocatorias/${encodeURIComponent(id)}/inscripciones`);
 export const listaSalidaDe = (id) => peticion("GET", `/convocatorias/${encodeURIComponent(id)}/salida`);

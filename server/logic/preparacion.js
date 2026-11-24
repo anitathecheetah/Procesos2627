@@ -2,6 +2,7 @@
 // Documentada en docs/preparacion.md.
 import { ErrorLogica } from "./errores.js";
 import { DIAS_DE_PREVISION } from "./meteo.js";
+import { evaluarBici } from "./bicis.js";
 
 // Fecha de hoy (AAAA-MM-DD) en la hora de España, que es donde se corren estas carreras.
 export const hoyEnEspana = (fecha = new Date()) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Madrid" }).format(fecha);
@@ -45,10 +46,6 @@ const REGLAS = [
     articulos: () => [articulo("Geles o barritas para la bici", "Practica la nutrición en los entrenos: no estrenes nada el día de la carrera.", "gel energético triatlón reseñas")],
   },
   {
-    aplica: () => true,
-    articulos: ({ drafting, cross }) => [cross ? BICI_CROSS : BICI[drafting in BICI ? drafting : "por confirmar"]],
-  },
-  {
     aplica: ({ deporte }) => deporte === "triatlon",
     articulos: ({ neopreno }) => [
       NEOPRENO[neopreno in NEOPRENO ? neopreno : "por confirmar"],
@@ -64,24 +61,24 @@ const NEOPRENO = {
   prohibido: null, // no se recomienda comprar ni llevar nada: se avisa en la propia preparación
   "por confirmar": articulo("Neopreno (por confirmar)", "Aún no se sabe si será obligatorio, opcional o prohibido: depende de la temperatura del agua y del aire. Mira el reglamento y el aviso de la organización.", "neopreno triatlón reglamento temperatura agua"),
 };
-// La bici depende del drafting: con drafting solo vale la de ruta; sin él también la de contrarreloj.
-const BICI = {
-  permitido: articulo("Bici de ruta (con drafting)", "Con drafting la bici de contrarreloj y los acoples no están permitidos: lleva una de ruta.", "bici de ruta triatlón"),
-  prohibido: articulo("Bici de ruta o de contrarreloj (sin drafting)", "Sin drafting puedes usar una bici de contrarreloj con acoples; revisa el reglamento de la prueba.", "bici contrarreloj triatlón"),
-  "por confirmar": articulo("Bici (drafting por confirmar)", "Si la prueba permite drafting solo vale una bici de ruta; si no, también la de contrarreloj. Confírmalo en el reglamento.", "reglamento drafting triatlón bici"),
-};
-// En las pruebas cross (triatlón, duatlón o aquatlón cross) la bici es de montaña; en el resto no se admite MTB.
-const BICI_CROSS = articulo("Bici de montaña (MTB)", "Es una prueba cross: se corre con MTB. Revisa en el reglamento el tipo de neumático y las protecciones obligatorias.", "mtb triatlón cross");
 const nombreDeporte = (deporte) => (deporte === "triatlon" ? "triatlón" : "duatlón");
 
-export function recomendarMaterial({ deporte, tiempo, neopreno, drafting, cross }) {
-  const contexto = { deporte, tiempo, neopreno, drafting, cross };
+export function recomendarMaterial({ deporte, tiempo, neopreno }) {
+  const contexto = { deporte, tiempo, neopreno };
   return REGLAS.filter((regla) => regla.aplica(contexto)).flatMap((regla) => regla.articulos(contexto));
+}
+
+async function materialDelUsuario(repos, carrera, usuarioId) {
+  const inscripcion = await repos.inscripciones.buscarUno({ convocatoriaId: carrera.id, usuarioId });
+  const perfil = await repos.perfiles.buscarPorId(usuarioId);
+  const bicis = (perfil?.bicis ?? []).map((b) => ({ nombre: b.nombre, tipo: b.tipo, ...evaluarBici(b, carrera) }));
+  return { inscrito: Boolean(inscripcion), bici: inscripcion?.bici ?? null, bicis };
 }
 
 export function crearServicioPreparacion({ repos, meteo, hoy = hoyEnEspana }) {
   return {
-    async preparacion(id) {
+    // `usuarioId` (opcional) añade el material del usuario: si está apuntado, qué bici ha elegido y cuáles de las suyas valen.
+    async preparacion(id, usuarioId) {
       const c = await repos.convocatorias.buscarPorId(id);
       if (!c) throw new ErrorLogica("NO_ENCONTRADO", "La carrera no existe");
       const dias = diasHasta(c.fecha, hoy());
@@ -96,7 +93,8 @@ export function crearServicioPreparacion({ repos, meteo, hoy = hoyEnEspana }) {
           : dias > DIAS_DE_PREVISION ? `La previsión aparece cuando faltan ${DIAS_DE_PREVISION} días o menos.`
           : !c.lugar ? "La carrera no tiene lugar indicado."
           : "No se ha podido obtener la previsión ahora mismo.",
-        recomendaciones: dias < 0 ? [] : recomendarMaterial({ deporte: c.deporte, tiempo, neopreno: c.neopreno, drafting: c.drafting, cross: c.cross }),
+        material: usuarioId ? await materialDelUsuario(repos, c, usuarioId) : null,
+        recomendaciones: dias < 0 ? [] : recomendarMaterial({ deporte: c.deporte, tiempo, neopreno: c.neopreno }),
       };
     },
   };

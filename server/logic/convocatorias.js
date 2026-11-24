@@ -10,6 +10,7 @@ import { leerListaSalida } from "./excelSalida.js";
 import { esPosibleMenor } from "./importacion.js";
 import { normalizarNombre } from "./normalizacion.js";
 import { diasHasta } from "./preparacion.js";
+import { evaluarBici } from "./bicis.js";
 
 // Neopreno según el reglamento de cada prueba (depende de la temperatura del agua y del aire y lo decide la
 // organización): lo fija el administrador al crear la carrera. «por confirmar» mientras no se sepa.
@@ -57,7 +58,7 @@ export function coincidenNombres(nombreUsuario, nombreAtleta) {
   return buscadas.length >= 2 && buscadas.every((p) => delAtleta.has(p));
 }
 
-export function crearServicioConvocatorias({ repos, usuarios, dominio, log = { info() {} } }) {
+export function crearServicioConvocatorias({ repos, usuarios, perfil, dominio, log = { info() {} } }) {
   async function buscar(id) {
     const c = await repos.convocatorias.buscarPorId(id);
     if (!c) throw new ErrorLogica("NO_ENCONTRADO", "La carrera no existe");
@@ -143,18 +144,39 @@ export function crearServicioConvocatorias({ repos, usuarios, dominio, log = { i
       log.info("Carrera eliminada", { id });
     },
 
-    // El usuario de la sesión se apunta con su nombre y sus dos apellidos (así se le reconoce después en la lista
-    // de salida oficial). Si ya estaba apuntado, se actualiza el nombre y no se duplica.
-    async apuntarse(usuarioId, id, nombreCompleto) {
+    // El usuario de la sesión se apunta con el nombre y los dos apellidos de su perfil (así se le reconoce después en la
+    // lista de salida oficial). Si ya estaba apuntado, se actualiza el nombre y no se duplica.
+    async apuntarse(usuarioId, id) {
       if (!usuarioId) throw new ErrorLogica("NO_AUTENTICADO", "Inicia sesión para apuntarte");
       await usuarios.obtener(usuarioId);
       const c = await buscar(id);
-      const nombre = texto(nombreCompleto, "El nombre", { min: 1, max: 100 });
-      if (palabras(nombre).length < 3) throw new ErrorLogica("DATOS_INVALIDOS", "Indica tu nombre y tus dos apellidos para apuntarte");
       if (c.estado !== ESTADOS_CONVOCATORIA.ABIERTA) throw new ErrorLogica("DATOS_INVALIDOS", "La carrera ya tiene lista de salida oficial y no admite inscripciones");
+      const p = await perfil.obtener(usuarioId);
+      const nombre = `${p.nombre} ${p.apellidos}`.trim().replace(/\s+/g, " ");
+      if (palabras(nombre).length < 3) throw new ErrorLogica("DATOS_INVALIDOS", "Completa tu nombre y tus dos apellidos en «Mi perfil» para apuntarte");
       const previa = await repos.inscripciones.buscarUno({ convocatoriaId: id, usuarioId });
       if (!previa) await repos.inscripciones.crear({ id: randomUUID(), convocatoriaId: id, usuarioId, nombre });
       else if (previa.nombre !== nombre) await repos.inscripciones.actualizar({ ...previa, nombre });
+    },
+
+    // Elige la bici que usará en la carrera (de las de su perfil) o la quita con `nombreBici` vacío. Hay que estar apuntado
+    // y la bici tiene que valer para la carrera (cross → MTB; con drafting no vale la de contrarreloj; MTB solo en cross).
+    async elegirBici(usuarioId, id, nombreBici) {
+      if (!usuarioId) throw new ErrorLogica("NO_AUTENTICADO", "Inicia sesión para elegir tu bici");
+      const c = await buscar(id);
+      const inscripcion = await repos.inscripciones.buscarUno({ convocatoriaId: id, usuarioId });
+      if (!inscripcion) throw new ErrorLogica("DATOS_INVALIDOS", "Apúntate a la carrera para elegir tu bici");
+      let bici = null;
+      if (nombreBici) {
+        const guardadas = (await perfil.obtener(usuarioId)).bicis;
+        const elegida = guardadas.find((b) => b.nombre === nombreBici);
+        if (!elegida) throw new ErrorLogica("DATOS_INVALIDOS", "Esa bici no está en tu perfil");
+        const v = evaluarBici(elegida, c);
+        if (!v.valida) throw new ErrorLogica("DATOS_INVALIDOS", `Esa bici no vale para esta carrera: ${v.motivo}`);
+        bici = { nombre: elegida.nombre, tipo: elegida.tipo };
+      }
+      await repos.inscripciones.actualizar({ ...inscripcion, bici });
+      return bici;
     },
 
     // El usuario de la sesión deja de ir. Si no estaba apuntado, no pasa nada.

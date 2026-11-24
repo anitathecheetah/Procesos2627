@@ -2,9 +2,11 @@
 // Documentado en docs/perfil-material.md.
 import { ErrorLogica } from "./errores.js";
 import { hoyEnEspana } from "./preparacion.js";
+import { TIPOS_BICI } from "./bicis.js";
+
+export { TIPOS_BICI };
 
 export const TIPOS_NEOPRENO = Object.freeze(["", "integral", "corto"]);
-export const TIPOS_BICI = Object.freeze(["ruta", "contrarreloj", "mtb"]);
 const MAX_BICIS = 5;
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
