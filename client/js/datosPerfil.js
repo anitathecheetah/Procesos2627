@@ -6,7 +6,7 @@ export function perfilDesdeFormulario(f) {
   const bicis = [];
   for (let i = 1; i <= HUECOS_BICI; i += 1) bicis.push({ nombre: f[`bici${i}_nombre`] ?? "", tipo: f[`bici${i}_tipo`] || "ruta" });
   return {
-    nombre: f.nombre ?? "", apellidos: f.apellidos ?? "", club: f.club ?? "", fechaNacimiento: f.fechaNacimiento ?? "",
+    nombre: f.nombre ?? "", apellidos: [f.apellido1, f.apellido2].map((a) => (a ?? "").trim()).filter(Boolean).join(" "), club: f.club ?? "", fechaNacimiento: f.fechaNacimiento ?? "",
     alturaCm: f.alturaCm ?? "", pesoKg: f.pesoKg ?? "",
     zapatillas: {
       triatlon: { carrera: f.tri_carrera ?? "", ciclismo: f.tri_ciclismo ?? "" },
@@ -17,10 +17,16 @@ export function perfilDesdeFormulario(f) {
   };
 }
 
+// En la API los apellidos son un solo texto; en el formulario son dos campos (el primero es la primera palabra).
+export function separarApellidos(apellidos) {
+  const [primero = "", ...resto] = String(apellidos ?? "").trim().split(/\s+/).filter(Boolean);
+  return { apellido1: primero, apellido2: resto.join(" ") };
+}
+
 // perfil de la API → valores del formulario
 export function formularioDesdePerfil(p) {
   const f = {
-    nombre: p.nombre, apellidos: p.apellidos, club: p.club, fechaNacimiento: p.fechaNacimiento,
+    nombre: p.nombre, ...separarApellidos(p.apellidos), club: p.club, fechaNacimiento: p.fechaNacimiento,
     alturaCm: p.alturaCm ?? "", pesoKg: p.pesoKg ?? "",
     tri_carrera: p.zapatillas.triatlon.carrera, tri_ciclismo: p.zapatillas.triatlon.ciclismo,
     dua_carrera1: p.zapatillas.duatlon.carrera1, dua_carrera2: p.zapatillas.duatlon.carrera2, dua_ciclismo: p.zapatillas.duatlon.ciclismo,
