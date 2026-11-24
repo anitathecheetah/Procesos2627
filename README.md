@@ -108,6 +108,7 @@ Al cerrar cada hito se etiqueta el último commit de `main` (`hito-1`, `hito-2`,
 
 Cada prueba importada se trata como duelos entre todos los participantes según su posición final; los DNF, DNS y descalificados no puntúan. El ranking se recalcula por fecha y es determinista. También hay un ranking de clubes (media del Elo de sus mejores atletas). La fórmula, sus decisiones y los límites están en [docs/ranking-elo.md](docs/ranking-elo.md). Con ese Elo se puede **predecir una carrera** (probabilidad de victoria, podio y top 10 de cada atleta, como Split Lab): ver [docs/prediccion.md](docs/prediccion.md). Cada prueba se abre en una página con pestañas (resumen, splits, clasificación y predicción) y la web usa un tema oscuro: ver [docs/paginas-de-carrera.md](docs/paginas-de-carrera.md). El administrador puede crear las **próximas carreras**, los usuarios apuntarse y, con el listado real de la federación, se compara quién fue de verdad: ver [docs/convocatorias.md](docs/convocatorias.md). La importación de Excel está en [docs/importacion-excel.md](docs/importacion-excel.md) y el modelo de datos en [docs/modelo-de-datos.md](docs/modelo-de-datos.md).
 - [Preparar una carrera: cuenta atrás, tiempo y material](docs/preparacion.md)
+- [Perfil y material del atleta (privado)](docs/perfil-material.md)
 - [Comunidad autónoma de la licencia](docs/comunidades.md)
 - [Navegación: barra lateral y paneles](docs/navegacion.md)
 

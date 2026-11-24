@@ -30,7 +30,7 @@ const manejar = (fn) => async (req, res, next) => {
   }
 };
 
-export function crearRutasApi({ usuarios, importacion, sanciones, consulta, ranking, prediccion, convocatorias, preparacion, sesiones, secreto, produccion = false }) {
+export function crearRutasApi({ usuarios, importacion, sanciones, consulta, ranking, prediccion, convocatorias, preparacion, perfil, sesiones, secreto, produccion = false }) {
   const router = Router();
   const opcionesCookie = { maxAgeSegundos: Math.floor(sesiones.duracionMs / 1000), seguro: produccion };
 
@@ -99,9 +99,18 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
     res.status(204).end();
   }));
 
+  // Perfil y material propios (privados): solo el dueño de la sesión los lee o los cambia.
+  router.get("/usuarios/yo/perfil", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await perfil.obtener(req.usuarioId));
+  }));
+  router.put("/usuarios/yo/perfil", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await perfil.guardar(req.usuarioId, req.body ?? {}));
+  }));
+
   // Eliminar un usuario (admin o el propio usuario). Eliminación lógica.
   router.delete("/usuarios/:id", exigirSesion, manejar(async (req, res) => {
     await usuarios.eliminar(req.usuarioId, req.params.id);
+    await perfil.eliminar(req.params.id);
     res.status(204).end();
   }));
 

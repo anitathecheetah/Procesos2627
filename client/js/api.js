@@ -43,6 +43,8 @@ export const sesionActual = () => peticion("GET", "/sesion");
 export const cerrarSesion = () => peticion("DELETE", "/sesion");
 export const listarUsuarios = () => peticion("GET", "/usuarios");
 export const eliminarUsuario = (id) => peticion("DELETE", `/usuarios/${id}`);
+export const perfilPropio = () => peticion("GET", "/usuarios/yo/perfil");
+export const guardarPerfil = (datos) => peticion("PUT", "/usuarios/yo/perfil", datos);
 export const cambiarPassword = (datos) => peticion("PUT", "/usuarios/yo/password", datos);
 
 // --- Resultados (consultas públicas) ---

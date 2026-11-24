@@ -17,6 +17,7 @@ import { crearServicioPrediccion } from "./logic/prediccion.js";
 import { crearServicioConvocatorias } from "./logic/convocatorias.js";
 import { crearServicioMeteo } from "./logic/meteo.js";
 import { crearServicioPreparacion } from "./logic/preparacion.js";
+import { crearServicioPerfil } from "./logic/perfil.js";
 import { crearServicioSanciones } from "./logic/sanciones.js";
 import { crearServicioImportacion } from "./logic/importacion.js";
 import { crearServicioSesiones } from "./logic/sesiones.js";
@@ -70,6 +71,7 @@ export function crearApp({
     prediccion: crearServicioPrediccion({ repos: dominioRepos }),
     convocatorias: crearServicioConvocatorias({ repos: dominioRepos, usuarios, dominio, log }),
     preparacion: crearServicioPreparacion({ repos: dominioRepos, meteo }),
+    perfil: crearServicioPerfil({ repos: dominioRepos }),
     sesiones: crearServicioSesiones(repositorioSesiones),
     secreto,
     produccion: process.env.NODE_ENV === "production",

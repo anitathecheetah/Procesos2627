@@ -52,6 +52,13 @@
         </label>
         <label>Fecha <input name="fecha" type="date" required></label>
         <label>Lugar <input name="lugar" placeholder="Águilas (Murcia)"></label>
+        <label><input name="cross" type="checkbox"> Cross (con bici de montaña)</label>
+        <label>Drafting (ir a rueda en la bici)
+          <select name="drafting"><option value="por confirmar">Por confirmar</option><option value="permitido">Permitido</option><option value="prohibido">Prohibido</option></select>
+        </label>
+        <label>Neopreno (solo triatlón)
+          <select name="neopreno"><option value="por confirmar">Por confirmar</option><option value="obligatorio">Obligatorio</option><option value="opcional">Opcional</option><option value="prohibido">Prohibido</option></select>
+        </label>
         <button type="submit">Crear carrera</button>
       </form>
       <p id="aviso-convocatorias" class="mensaje" role="status"></p>
@@ -179,6 +186,34 @@
       <p id="usuario-sesion"></p>
       <button id="boton-salir" type="button">Salir</button>
       <button id="boton-eliminar-cuenta" type="button">Eliminar mi cuenta</button>
+      <form id="form-perfil" novalidate>
+        <h3>Mi perfil y material <span class="suave">(privado: solo lo ves tú)</span></h3>
+        <label>Nombre <input name="nombre" maxlength="60" autocomplete="given-name"></label>
+        <label>Apellidos <input name="apellidos" maxlength="80" autocomplete="family-name"></label>
+        <label>Club <input name="club" maxlength="80" placeholder="Triatlón Albacete"></label>
+        <label>Fecha de nacimiento <input name="fechaNacimiento" type="date"></label> <span id="edad-perfil" class="suave"></span>
+        <label>Altura (cm) <input name="alturaCm" type="number" min="100" max="230" step="0.1"></label>
+        <label>Peso (kg) <input name="pesoKg" type="number" min="30" max="250" step="0.1"></label>
+        <h4>Zapatillas de triatlón</h4>
+        <label>Correr <input name="tri_carrera" maxlength="60"></label>
+        <label>Ciclismo <input name="tri_ciclismo" maxlength="60"></label>
+        <h4>Zapatillas de duatlón (hay dos carreras)</h4>
+        <label>Primera carrera <input name="dua_carrera1" maxlength="60"></label>
+        <label>Segunda carrera <input name="dua_carrera2" maxlength="60"></label>
+        <label>Ciclismo <input name="dua_ciclismo" maxlength="60"></label>
+        <h4>Neopreno</h4>
+        <label>Modelo <input name="neo_modelo" maxlength="60"></label>
+        <label>Tipo <select name="neo_tipo"><option value="">—</option><option value="integral">Integral</option><option value="corto">Corto</option></select></label>
+        <h4>Bicis</h4>
+        <label>Bici 1 <input name="bici1_nombre" maxlength="60" placeholder="Marca y modelo"></label>
+        <label>Tipo <select name="bici1_tipo"><option value="ruta">Ruta</option><option value="contrarreloj">Contrarreloj</option><option value="mtb">MTB</option></select></label>
+        <label>Bici 2 <input name="bici2_nombre" maxlength="60" placeholder="Marca y modelo"></label>
+        <label>Tipo <select name="bici2_tipo"><option value="ruta">Ruta</option><option value="contrarreloj">Contrarreloj</option><option value="mtb">MTB</option></select></label>
+        <label>Bici 3 <input name="bici3_nombre" maxlength="60" placeholder="Marca y modelo"></label>
+        <label>Tipo <select name="bici3_tipo"><option value="ruta">Ruta</option><option value="contrarreloj">Contrarreloj</option><option value="mtb">MTB</option></select></label>
+        <button type="submit">Guardar perfil</button>
+        <p class="mensaje" role="status"></p>
+      </form>
       <form id="form-password" novalidate>
         <h3>Cambiar contraseña</h3>
         <label>Contraseña actual <input name="actual" type="password" autocomplete="current-password" required></label>
