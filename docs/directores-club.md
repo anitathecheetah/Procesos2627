@@ -37,3 +37,9 @@ Unir clubes desde la pantalla de administración y actualizar el catálogo cada 
 ## Dónde está en la web
 La sección del menú «Mi perfil» (antes «Cuenta») reúne tres tarjetas: **Mi cuenta** (sesión, contraseña, eliminar cuenta),
 **Mi perfil y mi material** y **Director de club**.
+
+## Unir clubes desde Administración
+En «Solicitudes de director de club», cada solicitud cuyo club aún no existe (nuevo o del catálogo) lleva un desplegable:
+«Crear club nuevo» (o «Club del catálogo») o «Unir a: <club existente>». Sirve para el mismo club escrito de otra forma
+(p. ej. «TRIATLON ALBACETE RES» y «CLUB TRIATLÓN ALBACETE RES»): al aprobar, la solicitud queda asociada al club elegido y no se
+crea uno duplicado.
