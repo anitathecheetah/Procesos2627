@@ -111,6 +111,12 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
   router.get("/clubes", exigirSesion, manejar(async (_req, res) => {
     res.status(200).json(await directores.clubes());
   }));
+  router.get("/clubes/propuestos", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await directores.clubesPropuestos(req.usuarioId));
+  }));
+  router.put("/clubes/propuestos", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await directores.resolverClubPropuesto(req.usuarioId, req.body ?? {}));
+  }));
   router.get("/clubes/resumen", exigirSesion, manejar(async (req, res) => {
     res.status(200).json(await directores.resumenClubes(req.usuarioId));
   }));

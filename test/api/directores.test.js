@@ -59,6 +59,30 @@ test("ERROR: sin sesión 401, datos inválidos 400", async () => {
   } finally { cerrar(); }
 });
 
+test("club del perfil: se reconoce el oficial, el escrito a mano queda pendiente y el admin lo valida", async () => {
+  const { json, entrar, cerrar } = await arrancar();
+  try {
+    const ana = await entrar("ana@correo.es");
+    const adm = await entrar("admin@correo.es");
+    const guardar = async (club) => (await json("PUT", "/api/usuarios/yo/perfil", { nombre: "Ana", apellidos: "Gil Pérez", club }, ana)).json();
+    let p = await guardar("triatlon albacete"); // existe en la app: se guarda con su nombre oficial
+    assert.deepEqual([p.club, p.clubPendiente], ["Triatlón Albacete", false]);
+    p = await guardar("Club Marte Tri");
+    assert.deepEqual([p.club, p.clubPendiente], ["Club Marte Tri", true]);
+    assert.equal((await json("GET", "/api/clubes/propuestos", null, ana)).status, 403);
+    assert.deepEqual(await (await json("GET", "/api/clubes/propuestos", null, adm)).json(), [{ nombre: "Club Marte Tri", usuarios: 1 }]);
+    const r = await json("PUT", "/api/clubes/propuestos", { nombre: "club marte tri", nombreClub: "Club Marte Triatlón" }, adm);
+    assert.deepEqual(await r.json(), { club: "Club Marte Triatlón", perfiles: 1 });
+    p = await (await json("GET", "/api/usuarios/yo/perfil", null, ana)).json();
+    assert.deepEqual([p.club, p.clubPendiente], ["Club Marte Triatlón", false]);
+    assert.ok((await (await json("GET", "/api/clubes", null, ana)).json()).some((c) => c.nombre === "Club Marte Triatlón"));
+    await guardar("Otro Club Raro");
+    assert.equal((await json("PUT", "/api/clubes/propuestos", { nombre: "Otro Club Raro", descartar: true }, adm)).status, 200);
+    assert.equal((await (await json("GET", "/api/usuarios/yo/perfil", null, ana)).json()).club, "");
+    assert.equal((await json("PUT", "/api/clubes/propuestos", { nombre: "No existe" }, adm)).status, 404);
+  } finally { cerrar(); }
+});
+
 test("pestaña Clubes: el admin ve el resumen y el panel de cualquier club; los demás no", async () => {
   const { json, entrar, cerrar } = await arrancar();
   try {
