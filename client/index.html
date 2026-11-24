@@ -185,19 +185,37 @@
     </div>
 
 <div class="panel" data-seccion="cuenta" hidden>
-    <section id="zona-sesion" class="tarjeta" hidden>
-      <h2>Sesión iniciada</h2>
-      <p id="usuario-sesion"></p>
-      <button id="boton-salir" type="button">Salir</button>
-      <button id="boton-eliminar-cuenta" type="button">Eliminar mi cuenta</button>
-      <form id="form-perfil" novalidate>
-        <h3>Mi perfil y material <span class="suave">(privado: solo lo ves tú)</span></h3>
+    <div id="zona-sesion" hidden>
+      <h2>Mi perfil</h2>
+      <section class="tarjeta">
+        <h3>Mi cuenta</h3>
+        <p id="usuario-sesion"></p>
+        <button id="boton-salir" type="button">Salir</button>
+        <button id="boton-eliminar-cuenta" type="button">Eliminar mi cuenta</button>
+        <form id="form-password" novalidate>
+        <h3>Cambiar contraseña</h3>
+        <label>Contraseña actual <input name="actual" type="password" autocomplete="current-password" required></label>
+        <label>Contraseña nueva (mínimo 10 caracteres, un número y una mayúscula) <input name="nueva" type="password" autocomplete="new-password" required></label>
+        <label>Repite la contraseña nueva <input name="repetida" type="password" autocomplete="new-password" required></label>
+        <button type="submit">Cambiar contraseña</button>
+        <p class="mensaje" role="status"></p>
+      </form>
+      </section>
+      <section class="tarjeta">
+        <h3>Mi perfil y mi material</h3>
+        <form id="form-perfil" novalidate>
+        <p class="suave">Privado: solo lo ves tú. Altura y peso son opcionales.</p>
+        <fieldset>
+          <legend>Datos personales</legend>
         <label>Nombre <input name="nombre" maxlength="60" autocomplete="given-name"></label>
         <label>Apellidos <input name="apellidos" maxlength="80" autocomplete="family-name"></label>
         <label>Club <input name="club" maxlength="80" placeholder="Triatlón Albacete"></label>
         <label>Fecha de nacimiento <input name="fechaNacimiento" type="date"></label> <span id="edad-perfil" class="suave"></span>
         <label>Altura (cm) <input name="alturaCm" type="number" min="100" max="230" step="0.1"></label>
         <label>Peso (kg) <input name="pesoKg" type="number" min="30" max="250" step="0.1"></label>
+        </fieldset>
+        <fieldset>
+          <legend>Mi material</legend>
         <h4>Zapatillas de triatlón</h4>
         <label>Correr <input name="tri_carrera" maxlength="60"></label>
         <label>Ciclismo <input name="tri_ciclismo" maxlength="60"></label>
@@ -215,10 +233,12 @@
         <label>Tipo <select name="bici2_tipo"><option value="ruta">Ruta</option><option value="contrarreloj">Contrarreloj</option><option value="mtb">MTB</option></select></label>
         <label>Bici 3 <input name="bici3_nombre" maxlength="60" placeholder="Marca y modelo"></label>
         <label>Tipo <select name="bici3_tipo"><option value="ruta">Ruta</option><option value="contrarreloj">Contrarreloj</option><option value="mtb">MTB</option></select></label>
+        </fieldset>
         <button type="submit">Guardar perfil</button>
         <p class="mensaje" role="status"></p>
       </form>
-      <section id="zona-director" hidden>
+      </section>
+      <section id="zona-director" class="tarjeta" hidden>
         <h3>Director de club</h3>
         <p class="suave">Si eres director técnico de un club, pide acceso al panel de estadísticas de sus atletas. Lo aprueba el administrador. Es independiente de tu cuenta de deportista.</p>
         <p id="estado-director"></p>
@@ -230,15 +250,7 @@
         </form>
         <div id="panel-club"></div>
       </section>
-      <form id="form-password" novalidate>
-        <h3>Cambiar contraseña</h3>
-        <label>Contraseña actual <input name="actual" type="password" autocomplete="current-password" required></label>
-        <label>Contraseña nueva (mínimo 10 caracteres, un número y una mayúscula) <input name="nueva" type="password" autocomplete="new-password" required></label>
-        <label>Repite la contraseña nueva <input name="repetida" type="password" autocomplete="new-password" required></label>
-        <button type="submit">Cambiar contraseña</button>
-        <p class="mensaje" role="status"></p>
-      </form>
-    </section>
+    </div>
 
     <div class="formularios" id="zona-formularios">
       <section class="tarjeta">

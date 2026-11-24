@@ -1,6 +1,6 @@
 # Perfil y material del atleta (PBI-54)
 
-Cada usuario puede guardar en su cuenta («Mi perfil y material») datos que **solo él puede ver**.
+Cada usuario puede guardar en «Mi perfil» (tarjeta «Mi perfil y mi material») datos que **solo él puede ver**.
 
 ## Qué se guarda
 - Nombre, apellidos, club (texto libre).

@@ -3,7 +3,7 @@
 Un director técnico puede tener, además de su cuenta de deportista, acceso a las estadísticas de los atletas de su club.
 
 ## Flujo
-1. En la cuenta, «Director de club»: eliges tu club de la lista (los clubes que existen en la app) o, si no aparece,
+1. En «Mi perfil», tarjeta «Director de club»: eliges tu club de la lista (los clubes que existen en la app) o, si no aparece,
    «Mi club no está en la lista» y escribes el nombre.
 2. La solicitud queda **pendiente**. Mientras no se apruebe no se ve ningún dato (403).
 3. El administrador ve las solicitudes en «Administración», y las **aprueba** o **rechaza**. En un club nuevo puede corregir
@@ -24,3 +24,7 @@ Solo datos públicos de los resultados: **nunca** el perfil privado (peso, altur
 
 ## Más adelante
 Cargar como catálogo la lista oficial de clubes de la FETRI.
+
+## Dónde está en la web
+La sección del menú «Mi perfil» (antes «Cuenta») reúne tres tarjetas: **Mi cuenta** (sesión, contraseña, eliminar cuenta),
+**Mi perfil y mi material** y **Director de club**.

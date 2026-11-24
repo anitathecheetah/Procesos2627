@@ -7,7 +7,7 @@ export const SECCIONES = [
   { id: "rankings", titulo: "Rankings", icono: "🏆" },
   { id: "prediccion", titulo: "Predicción", icono: "🔮" },
   { id: "proximas", titulo: "Próximas carreras", icono: "📅" },
-  { id: "cuenta", titulo: "Cuenta", icono: "👤" },
+  { id: "cuenta", titulo: "Mi perfil", icono: "👤" },
   { id: "admin", titulo: "Admin", icono: "🛠️", soloAdmin: true },
 ];
 
