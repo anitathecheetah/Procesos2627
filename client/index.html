@@ -197,14 +197,6 @@
         <p id="usuario-sesion"></p>
         <button id="boton-salir" type="button">Salir</button>
         <button id="boton-eliminar-cuenta" type="button">Eliminar mi cuenta</button>
-        <form id="form-password" novalidate>
-        <h3>Cambiar contraseña</h3>
-        <label>Contraseña actual <input name="actual" type="password" autocomplete="current-password" required></label>
-        <label>Contraseña nueva (mínimo 10 caracteres, un número y una mayúscula) <input name="nueva" type="password" autocomplete="new-password" required></label>
-        <label>Repite la contraseña nueva <input name="repetida" type="password" autocomplete="new-password" required></label>
-        <button type="submit">Cambiar contraseña</button>
-        <p class="mensaje" role="status"></p>
-      </form>
       </section>
       <section class="tarjeta">
         <h3>Mi perfil y mi material</h3>
@@ -213,7 +205,8 @@
         <fieldset>
           <legend>Datos personales</legend>
         <label>Nombre <input name="nombre" maxlength="60" autocomplete="given-name"></label>
-        <label>Apellidos <input name="apellidos" maxlength="80" autocomplete="family-name"></label>
+        <label>Primer apellido <input name="apellido1" maxlength="40" autocomplete="family-name"></label>
+        <label>Segundo apellido <input name="apellido2" maxlength="40"></label>
         <label>Club <input name="club" maxlength="80" list="lista-clubes" autocomplete="off" placeholder="Escribe para buscar tu club"></label>
         <datalist id="lista-clubes"></datalist>
         <p id="estado-club" class="suave"></p>
@@ -257,6 +250,16 @@
           <p class="mensaje" role="status"></p>
         </form>
         <div id="panel-club"></div>
+      </section>
+      <section class="tarjeta">
+        <h3>Cambiar contraseña</h3>
+        <form id="form-password" novalidate>
+        <label>Contraseña actual <input name="actual" type="password" autocomplete="current-password" required></label>
+        <label>Contraseña nueva (mínimo 10 caracteres, un número y una mayúscula) <input name="nueva" type="password" autocomplete="new-password" required></label>
+        <label>Repite la contraseña nueva <input name="repetida" type="password" autocomplete="new-password" required></label>
+        <button type="submit">Cambiar contraseña</button>
+        <p class="mensaje" role="status"></p>
+      </form>
       </section>
     </div>
 
