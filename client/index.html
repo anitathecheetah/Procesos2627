@@ -37,6 +37,10 @@
       </table>
       <p id="aviso-admin" class="mensaje" role="status"></p>
     </section>
+    <section id="zona-solicitudes-club" class="tarjeta" hidden>
+      <h2>Solicitudes de director de club</h2>
+      <div id="solicitudes-club"></div>
+    </section>
     </div>
 
     <div class="panel" data-seccion="proximas" hidden>
@@ -214,6 +218,18 @@
         <button type="submit">Guardar perfil</button>
         <p class="mensaje" role="status"></p>
       </form>
+      <section id="zona-director" hidden>
+        <h3>Director de club</h3>
+        <p class="suave">Si eres director técnico de un club, pide acceso al panel de estadísticas de sus atletas. Lo aprueba el administrador. Es independiente de tu cuenta de deportista.</p>
+        <p id="estado-director"></p>
+        <form id="form-director" novalidate>
+          <label>Club <select name="club"></select></label>
+          <label id="etiqueta-club-nuevo" hidden>Nombre de tu club <input name="nombreClub" maxlength="80" placeholder="Nombre completo del club"></label>
+          <button type="submit">Solicitar ser director</button>
+          <p class="mensaje" role="status"></p>
+        </form>
+        <div id="panel-club"></div>
+      </section>
       <form id="form-password" novalidate>
         <h3>Cambiar contraseña</h3>
         <label>Contraseña actual <input name="actual" type="password" autocomplete="current-password" required></label>

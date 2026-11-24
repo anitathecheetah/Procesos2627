@@ -13,6 +13,7 @@ export const UNICOS_DOMINIO = {
   inscripciones: [["convocatoriaId", "usuarioId"]],
   salida: [["convocatoriaId", "atletaId"]], // lista de salida oficial de cada carrera
   perfiles: [["usuarioId"]], // perfil y material de cada usuario (privado)
+  solicitudesClub: [], // solicitudes para ser director de un club (PBI-55)
 };
 
 export const INDICES_DOMINIO = Object.fromEntries(
@@ -29,6 +30,7 @@ export const INDICES_DOMINIO = Object.fromEntries(
     inscripciones: [{ campos: ["usuarioId"] }],
     salida: [],
     perfiles: [],
+    solicitudesClub: [{ campos: ["usuarioId"] }, { campos: ["estado"] }],
   }).map(([nombre, extra]) => [
     nombre,
     [...UNICOS_DOMINIO[nombre].map((campos) => ({ campos, unico: true })), ...extra],

@@ -123,7 +123,7 @@ export function crearServicioImportacion({ repos, dominio, usuarios, log = { inf
       }
       let clubesEliminados = 0;
       for (const clubId of new Set(resultados.map((r) => r.clubId).filter(Boolean))) {
-        const enUso = (await repos.resultados.listar({ clubId })).length || (await repos.pertenencias.listar({ clubId })).length;
+        const enUso = (await repos.resultados.listar({ clubId })).length || (await repos.pertenencias.listar({ clubId })).length || (await repos.solicitudesClub.listar({ clubId })).length;
         if (enUso) continue;
         await repos.clubes.eliminar(clubId);
         clubesEliminados++;

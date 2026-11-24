@@ -120,6 +120,12 @@ export function crearServicioUsuarios(repositorio, { cifrador, notificar = () =>
       return { id: usuario.id, activo: usuario.estado === "activo" };
     },
 
+    // Para otros servicios (el solicitante ya está verificado como administrador): nombre y email de un usuario.
+    async datosPublicos(id) {
+      const u = await repositorio.buscarPorId(id);
+      return u ? { nombre: u.nombre, email: u.email } : null;
+    },
+
     // Para otros servicios: corta con 401/403 si el solicitante no es un administrador identificado.
     async exigirAdministrador(solicitanteId) {
       await exigirAdmin(repositorio, solicitanteId);

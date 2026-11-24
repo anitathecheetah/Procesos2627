@@ -30,7 +30,7 @@ const manejar = (fn) => async (req, res, next) => {
   }
 };
 
-export function crearRutasApi({ usuarios, importacion, sanciones, consulta, ranking, prediccion, convocatorias, preparacion, perfil, sesiones, secreto, produccion = false }) {
+export function crearRutasApi({ usuarios, importacion, sanciones, consulta, ranking, prediccion, convocatorias, preparacion, perfil, directores, sesiones, secreto, produccion = false }) {
   const router = Router();
   const opcionesCookie = { maxAgeSegundos: Math.floor(sesiones.duracionMs / 1000), seguro: produccion };
 
@@ -105,6 +105,26 @@ export function crearRutasApi({ usuarios, importacion, sanciones, consulta, rank
   }));
   router.put("/usuarios/yo/perfil", exigirSesion, manejar(async (req, res) => {
     res.status(200).json(await perfil.guardar(req.usuarioId, req.body ?? {}));
+  }));
+
+  // Directores de club (PBI-55). Clubes para elegir, solicitud propia, panel del club y resolución por el administrador.
+  router.get("/clubes", exigirSesion, manejar(async (_req, res) => {
+    res.status(200).json(await directores.clubes());
+  }));
+  router.post("/directores/solicitudes", exigirSesion, manejar(async (req, res) => {
+    res.status(201).json(await directores.solicitar(req.usuarioId, req.body ?? {}));
+  }));
+  router.get("/directores/solicitudes/yo", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await directores.miSolicitud(req.usuarioId));
+  }));
+  router.get("/directores/solicitudes", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await directores.pendientes(req.usuarioId));
+  }));
+  router.put("/directores/solicitudes/:id", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await directores.resolver(req.usuarioId, req.params.id, req.body ?? {}));
+  }));
+  router.get("/directores/panel", exigirSesion, manejar(async (req, res) => {
+    res.status(200).json(await directores.panel(req.usuarioId));
   }));
 
   // Eliminar un usuario (admin o el propio usuario). Eliminación lógica.
