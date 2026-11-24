@@ -125,6 +125,7 @@ export function mostrarPreparacion(p) {
   nodos.push(p.tiempo
     ? el("p", `Previsión: ${textoTiempo(p.tiempo)} (fuente: ${p.tiempo.fuente})`, { className: "prevision" })
     : el("p", p.sinPrevision ?? "", { className: "suave" }));
+  if (p.carrera.neopreno) nodos.push(el("p", `Neopreno: ${p.carrera.neopreno}${p.carrera.neopreno === "prohibido" ? " (no podrás usarlo)" : ""}.`, { className: "prevision" }));
   if (p.recomendaciones.length) {
     const ul = el("ul", undefined, { className: "lista" });
     p.recomendaciones.forEach((a) => {

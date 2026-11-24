@@ -6,6 +6,7 @@ import {
 } from "./ui.js";
 import "./resultados.js";
 import "./prediccion.js";
+import { cargarPerfil } from "./perfil.js";
 import { mostrarBotonRecalcular } from "./ranking.js";
 import { alCambiarSesion } from "./convocatorias.js";
 import { iniciarNavegacion, alCambiarSesionNavegacion } from "./navegacion.js";
@@ -32,6 +33,7 @@ async function mostrarSesionCompleta(usuario) {
   mostrarSesion(usuario);
   alCambiarSesionNavegacion(usuario);
   await alCambiarSesion(usuario);
+  await cargarPerfil(usuario);
   if (usuario?.rol === "admin") await cargarAdministracion();
   else mostrarAdministracion(null);
 }

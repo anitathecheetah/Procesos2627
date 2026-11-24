@@ -11,6 +11,10 @@ import { esPosibleMenor } from "./importacion.js";
 import { normalizarNombre } from "./normalizacion.js";
 import { diasHasta } from "./preparacion.js";
 
+// Neopreno según el reglamento de cada prueba (depende de la temperatura del agua y del aire y lo decide la
+// organización): lo fija el administrador al crear la carrera. «por confirmar» mientras no se sepa.
+export const REGLAS_NEOPRENO = Object.freeze(["obligatorio", "opcional", "prohibido", "por confirmar"]);
+
 export const ESTADOS_CONVOCATORIA = Object.freeze({ ABIERTA: "abierta", CERRADA: "cerrada" }); // cerrada = con lista de salida oficial
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -20,6 +24,12 @@ function texto(valor, campo, { min = 0, max }) {
     throw new ErrorLogica("DATOS_INVALIDOS", min ? `${campo} debe tener entre ${min} y ${max} caracteres` : `${campo} no puede tener más de ${max} caracteres`);
   }
   return t;
+}
+function reglaNeopreno(valor, deporte) {
+  if (deporte !== "triatlon") return null; // en duatlón no hay natación
+  const regla = valor || "por confirmar";
+  if (!REGLAS_NEOPRENO.includes(regla)) throw new ErrorLogica("DATOS_INVALIDOS", `El neopreno debe ser uno de: ${REGLAS_NEOPRENO.join(", ")}`);
+  return regla;
 }
 function fechaValida(fecha) {
   if (typeof fecha !== "string" || !ISO.test(fecha) || Number.isNaN(Date.parse(`${fecha}T00:00:00Z`)) ||
@@ -81,7 +91,7 @@ export function crearServicioConvocatorias({ repos, usuarios, dominio, log = { i
 
   return {
     // Crea una carrera futura (solo administradores).
-    async crear(solicitanteId, { nombre, deporte, fecha, lugar } = {}) {
+    async crear(solicitanteId, { nombre, deporte, fecha, lugar, neopreno } = {}) {
       await usuarios.exigirAdministrador(solicitanteId);
       if (!DEPORTES.includes(deporte)) throw new ErrorLogica("DATOS_INVALIDOS", `El deporte debe ser uno de: ${DEPORTES.join(", ")}`);
       const c = {
@@ -90,6 +100,7 @@ export function crearServicioConvocatorias({ repos, usuarios, dominio, log = { i
         deporte,
         fecha: fechaValida(fecha),
         lugar: texto(lugar ?? "", "El lugar", { max: 100 }),
+        neopreno: reglaNeopreno(neopreno, deporte),
         estado: ESTADOS_CONVOCATORIA.ABIERTA,
         creadaPor: solicitanteId,
       };

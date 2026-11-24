@@ -46,16 +46,24 @@ const REGLAS = [
   },
   {
     aplica: ({ deporte }) => deporte === "triatlon",
-    articulos: () => [
-      articulo("Neopreno", "Comprueba en el reglamento si es obligatorio o está permitido según la temperatura del agua.", "neopreno triatlón reglamento temperatura agua"),
+    articulos: ({ neopreno }) => [
+      NEOPRENO[neopreno in NEOPRENO ? neopreno : "por confirmar"],
       articulo("Antiempañante para las gafas de natación", "Evita perder referencias en la natación.", "antiempañante gafas natación"),
-    ],
+    ].filter(Boolean),
   },
 ];
+// Qué decir del neopreno según lo que haya fijado el administrador para esa carrera. No se dan umbrales de
+// temperatura: dependen del reglamento y de la decisión de la organización el mismo día.
+const NEOPRENO = {
+  obligatorio: articulo("Neopreno (obligatorio en esta carrera)", "La organización lo exige: sin él no podrás tomar la salida.", "neopreno triatlón"),
+  opcional: articulo("Neopreno (opcional en esta carrera)", "Puedes elegir. Decide con la temperatura del agua que confirme la organización; si lo llevas, pruébalo antes en aguas abiertas.", "neopreno triatlón"),
+  prohibido: null, // no se recomienda comprar ni llevar nada: se avisa en la propia preparación
+  "por confirmar": articulo("Neopreno (por confirmar)", "Aún no se sabe si será obligatorio, opcional o prohibido: depende de la temperatura del agua y del aire. Mira el reglamento y el aviso de la organización.", "neopreno triatlón reglamento temperatura agua"),
+};
 const nombreDeporte = (deporte) => (deporte === "triatlon" ? "triatlón" : "duatlón");
 
-export function recomendarMaterial({ deporte, tiempo }) {
-  const contexto = { deporte, tiempo };
+export function recomendarMaterial({ deporte, tiempo, neopreno }) {
+  const contexto = { deporte, tiempo, neopreno };
   return REGLAS.filter((regla) => regla.aplica(contexto)).flatMap((regla) => regla.articulos(contexto));
 }
 
@@ -68,7 +76,7 @@ export function crearServicioPreparacion({ repos, meteo, hoy = hoyEnEspana }) {
       const dentroDelPlazo = dias >= 0 && dias <= DIAS_DE_PREVISION;
       const tiempo = dentroDelPlazo ? await meteo.prevision(c.lugar, c.fecha) : null;
       return {
-        carrera: { id: c.id, nombre: c.nombre, deporte: c.deporte, fecha: c.fecha, lugar: c.lugar },
+        carrera: { id: c.id, nombre: c.nombre, deporte: c.deporte, fecha: c.fecha, lugar: c.lugar, neopreno: c.neopreno ?? null },
         diasRestantes: dias,
         tiempo,
         sinPrevision: tiempo ? null
@@ -76,7 +84,7 @@ export function crearServicioPreparacion({ repos, meteo, hoy = hoyEnEspana }) {
           : dias > DIAS_DE_PREVISION ? `La previsión aparece cuando faltan ${DIAS_DE_PREVISION} días o menos.`
           : !c.lugar ? "La carrera no tiene lugar indicado."
           : "No se ha podido obtener la previsión ahora mismo.",
-        recomendaciones: dias < 0 ? [] : recomendarMaterial({ deporte: c.deporte, tiempo }),
+        recomendaciones: dias < 0 ? [] : recomendarMaterial({ deporte: c.deporte, tiempo, neopreno: c.neopreno }),
       };
     },
   };
