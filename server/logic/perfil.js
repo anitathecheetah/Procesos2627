@@ -1,4 +1,4 @@
-// Perfil y material del atleta (PBI-42): datos que cada usuario guarda en su cuenta y que solo él puede ver.
+// Perfil y material del atleta (PBI-54): datos que cada usuario guarda en su cuenta y que solo él puede ver.
 // Documentado en docs/perfil-material.md.
 import { ErrorLogica } from "./errores.js";
 import { hoyEnEspana } from "./preparacion.js";

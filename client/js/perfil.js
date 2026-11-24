@@ -1,4 +1,4 @@
-// Formulario «Mi perfil y material» de la cuenta: datos privados de cada usuario (PBI-42).
+// Formulario «Mi perfil y material» de la cuenta: datos privados de cada usuario (PBI-54).
 import { perfilPropio, guardarPerfil } from "./api.js";
 import { alEnviar, mostrarMensaje } from "./ui.js";
 import { perfilDesdeFormulario, formularioDesdePerfil, textoEdad } from "./datosPerfil.js";

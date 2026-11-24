@@ -1,4 +1,4 @@
-// GET/PUT /api/usuarios/yo/perfil: perfil y material privados (PBI-42).
+// GET/PUT /api/usuarios/yo/perfil: perfil y material privados (PBI-54).
 import test from "node:test";
 import assert from "node:assert/strict";
 import { crearApp } from "../../server/app.js";

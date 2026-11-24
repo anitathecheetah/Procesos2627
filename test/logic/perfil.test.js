@@ -1,4 +1,4 @@
-// Perfil y material del atleta (PBI-42) y regla del neopreno de cada carrera.
+// Perfil y material del atleta (PBI-54) y regla del neopreno de cada carrera.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { crearServicioPerfil, edadEn } from "../../server/logic/perfil.js";

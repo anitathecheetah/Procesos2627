@@ -1,4 +1,4 @@
-# Perfil y material del atleta (PBI-42)
+# Perfil y material del atleta (PBI-54)
 
 Cada usuario puede guardar en su cuenta («Mi perfil y material») datos que **solo él puede ver**.
 
