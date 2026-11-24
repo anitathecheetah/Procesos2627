@@ -143,3 +143,6 @@ button.peligro { background: transparent; color: var(--error); border: 1px solid
 #zona-sesion .tarjeta h3 { margin: 0 0 .5rem; font-size: 1rem; }
 #form-perfil fieldset { border: 1px solid var(--borde); border-radius: .5rem; margin: 0 0 .75rem; padding: .6rem .8rem; }
 #form-perfil legend { font-weight: 600; padding: 0 .3rem; }
+
+/* Punto de color del maillot de un club de Primera División */
+.punto-club { display: inline-block; width: .9em; height: .9em; margin-right: .45em; border-radius: 50%; border: 1px solid var(--borde); vertical-align: -.1em; }

@@ -110,6 +110,7 @@ Cada prueba importada se trata como duelos entre todos los participantes según 
 - [Preparar una carrera: cuenta atrás, tiempo y material](docs/preparacion.md)
 - [Perfil y material del atleta (privado)](docs/perfil-material.md)
 - [Directores de club y estadísticas](docs/directores-club.md)
+- [Colores de los clubes de Primera División](docs/colores-clubes.md)
 - [Comunidad autónoma de la licencia](docs/comunidades.md)
 - [Navegación: barra lateral y paneles](docs/navegacion.md)
 

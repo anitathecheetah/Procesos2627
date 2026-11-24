@@ -1,4 +1,5 @@
 // Consultas públicas de pruebas, clasificaciones y atletas. Solo lectura.
+import { conColores } from "./coloresClubes.js";
 import { ErrorLogica } from "./errores.js";
 import { normalizarNombre } from "./normalizacion.js";
 import { DEPORTES, ESTADOS_RESULTADO, nombreComunidad } from "./catalogos.js";
@@ -41,7 +42,7 @@ function conCache(buscar) {
     return memoria.get(id);
   };
 }
-const resumenClub = (c) => (c ? { id: c.id, nombre: c.nombre } : null);
+const resumenClub = (c) => (c ? conColores({ id: c.id, nombre: c.nombre }) : null);
 const resumenSanciones = (lista) => lista.map(({ pares, observaciones }) => ({ pares, ...(observaciones ? { observaciones } : {}) }));
 
 export function crearServicioConsulta({ repos }) {

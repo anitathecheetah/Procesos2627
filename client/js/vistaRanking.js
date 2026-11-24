@@ -1,6 +1,21 @@
 // Presentación del ranking Elo: solo construye el DOM. Todo el texto entra con textContent.
+import { fondoDeColores } from "./coloresClub.js";
+
 function celda(texto) {
   const td = document.createElement("td");
+  if (texto && typeof texto === "object") {
+    // Club con colores: punto de color + nombre.
+    const fondo = fondoDeColores(texto.colores);
+    if (fondo) {
+      const punto = document.createElement("span");
+      punto.className = "punto-club";
+      punto.style.background = fondo;
+      punto.title = texto.descripcionColor ?? "";
+      td.append(punto);
+    }
+    td.append(document.createTextNode(texto.nombre ?? ""));
+    return td;
+  }
   td.textContent = texto ?? "";
   return td;
 }
@@ -15,10 +30,10 @@ const VACIO = {
 };
 
 function filaDeAtleta(f) {
-  return [f.posicion, f.atleta.nombre, f.club?.nombre, f.comunidad, f.rating, f.pruebas];
+  return [f.posicion, f.atleta.nombre, f.club, f.comunidad, f.rating, f.pruebas];
 }
 function filaDeClub(f) {
-  return [f.posicion, f.club.nombre, f.rating, f.atletas, f.mejores.map((m) => `${m.nombre} (${m.rating})`).join(", ")];
+  return [f.posicion, f.club, f.rating, f.atletas, f.mejores.map((m) => `${m.nombre} (${m.rating})`).join(", ")];
 }
 
 // vista: "atletas" (por defecto) o "clubes". Cambia la cabecera de la tabla según la vista.

@@ -1,5 +1,6 @@
 // Ranking Elo por deporte. El recálculo recorre todas las pruebas por orden de fecha y es determinista:
 // con los mismos resultados siempre da el mismo ranking. La fórmula está en docs/ranking-elo.md.
+import { conColores } from "./coloresClubes.js";
 import { randomUUID } from "node:crypto";
 import { ErrorLogica } from "./errores.js";
 import { DEPORTES, COMUNIDADES, cuentaParaElo, nombreComunidad } from "./catalogos.js";
@@ -93,7 +94,7 @@ export function crearServicioRanking({ repos, usuarios, log = { info() {} } }) {
         return {
           posicion: desde + i + 1,
           atleta: { id: atleta.id, nombre: atleta.nombre },
-          club: club ? { id: club.id, nombre: club.nombre } : null,
+          club: club ? conColores({ id: club.id, nombre: club.nombre }) : null,
           comunidad: nombreComunidad(r.federacion),
           rating: Math.round(r.rating),
           pruebas: r.pruebas,
@@ -132,7 +133,7 @@ export function crearServicioRanking({ repos, usuarios, log = { info() {} } }) {
         const club = await repos.clubes.buscarPorId(c.clubId);
         return {
           posicion: desde + i + 1,
-          club: { id: club.id, nombre: club.nombre },
+          club: conColores({ id: club.id, nombre: club.nombre }),
           rating: Math.round(c.rating),
           atletas: c.atletas,
           mejores: await Promise.all(c.top.map(async (r) => ({ id: r.atletaId, nombre: (await repos.atletas.buscarPorId(r.atletaId)).nombre, rating: Math.round(r.rating) }))),
