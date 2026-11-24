@@ -45,6 +45,10 @@ const REGLAS = [
     articulos: () => [articulo("Geles o barritas para la bici", "Practica la nutrición en los entrenos: no estrenes nada el día de la carrera.", "gel energético triatlón reseñas")],
   },
   {
+    aplica: () => true,
+    articulos: ({ drafting, cross }) => [cross ? BICI_CROSS : BICI[drafting in BICI ? drafting : "por confirmar"]],
+  },
+  {
     aplica: ({ deporte }) => deporte === "triatlon",
     articulos: ({ neopreno }) => [
       NEOPRENO[neopreno in NEOPRENO ? neopreno : "por confirmar"],
@@ -60,10 +64,18 @@ const NEOPRENO = {
   prohibido: null, // no se recomienda comprar ni llevar nada: se avisa en la propia preparación
   "por confirmar": articulo("Neopreno (por confirmar)", "Aún no se sabe si será obligatorio, opcional o prohibido: depende de la temperatura del agua y del aire. Mira el reglamento y el aviso de la organización.", "neopreno triatlón reglamento temperatura agua"),
 };
+// La bici depende del drafting: con drafting solo vale la de ruta; sin él también la de contrarreloj.
+const BICI = {
+  permitido: articulo("Bici de ruta (con drafting)", "Con drafting la bici de contrarreloj y los acoples no están permitidos: lleva una de ruta.", "bici de ruta triatlón"),
+  prohibido: articulo("Bici de ruta o de contrarreloj (sin drafting)", "Sin drafting puedes usar una bici de contrarreloj con acoples; revisa el reglamento de la prueba.", "bici contrarreloj triatlón"),
+  "por confirmar": articulo("Bici (drafting por confirmar)", "Si la prueba permite drafting solo vale una bici de ruta; si no, también la de contrarreloj. Confírmalo en el reglamento.", "reglamento drafting triatlón bici"),
+};
+// En las pruebas cross (triatlón, duatlón o aquatlón cross) la bici es de montaña; en el resto no se admite MTB.
+const BICI_CROSS = articulo("Bici de montaña (MTB)", "Es una prueba cross: se corre con MTB. Revisa en el reglamento el tipo de neumático y las protecciones obligatorias.", "mtb triatlón cross");
 const nombreDeporte = (deporte) => (deporte === "triatlon" ? "triatlón" : "duatlón");
 
-export function recomendarMaterial({ deporte, tiempo, neopreno }) {
-  const contexto = { deporte, tiempo, neopreno };
+export function recomendarMaterial({ deporte, tiempo, neopreno, drafting, cross }) {
+  const contexto = { deporte, tiempo, neopreno, drafting, cross };
   return REGLAS.filter((regla) => regla.aplica(contexto)).flatMap((regla) => regla.articulos(contexto));
 }
 
@@ -76,7 +88,7 @@ export function crearServicioPreparacion({ repos, meteo, hoy = hoyEnEspana }) {
       const dentroDelPlazo = dias >= 0 && dias <= DIAS_DE_PREVISION;
       const tiempo = dentroDelPlazo ? await meteo.prevision(c.lugar, c.fecha) : null;
       return {
-        carrera: { id: c.id, nombre: c.nombre, deporte: c.deporte, fecha: c.fecha, lugar: c.lugar, neopreno: c.neopreno ?? null },
+        carrera: { id: c.id, nombre: c.nombre, deporte: c.deporte, fecha: c.fecha, lugar: c.lugar, neopreno: c.neopreno ?? null, drafting: c.drafting ?? "por confirmar", cross: Boolean(c.cross) },
         diasRestantes: dias,
         tiempo,
         sinPrevision: tiempo ? null
@@ -84,7 +96,7 @@ export function crearServicioPreparacion({ repos, meteo, hoy = hoyEnEspana }) {
           : dias > DIAS_DE_PREVISION ? `La previsión aparece cuando faltan ${DIAS_DE_PREVISION} días o menos.`
           : !c.lugar ? "La carrera no tiene lugar indicado."
           : "No se ha podido obtener la previsión ahora mismo.",
-        recomendaciones: dias < 0 ? [] : recomendarMaterial({ deporte: c.deporte, tiempo, neopreno: c.neopreno }),
+        recomendaciones: dias < 0 ? [] : recomendarMaterial({ deporte: c.deporte, tiempo, neopreno: c.neopreno, drafting: c.drafting, cross: c.cross }),
       };
     },
   };

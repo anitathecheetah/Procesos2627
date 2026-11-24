@@ -15,6 +15,10 @@ import { diasHasta } from "./preparacion.js";
 // organización): lo fija el administrador al crear la carrera. «por confirmar» mientras no se sepa.
 export const REGLAS_NEOPRENO = Object.freeze(["obligatorio", "opcional", "prohibido", "por confirmar"]);
 
+// Drafting (ir a rueda en el segmento de bici). Si está permitido, la bici debe ser de ruta: la de contrarreloj
+// (con acoples) solo vale en pruebas sin drafting. Lo fija el administrador según el reglamento de la prueba.
+export const REGLAS_DRAFTING = Object.freeze(["permitido", "prohibido", "por confirmar"]);
+
 export const ESTADOS_CONVOCATORIA = Object.freeze({ ABIERTA: "abierta", CERRADA: "cerrada" }); // cerrada = con lista de salida oficial
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -29,6 +33,11 @@ function reglaNeopreno(valor, deporte) {
   if (deporte !== "triatlon") return null; // en duatlón no hay natación
   const regla = valor || "por confirmar";
   if (!REGLAS_NEOPRENO.includes(regla)) throw new ErrorLogica("DATOS_INVALIDOS", `El neopreno debe ser uno de: ${REGLAS_NEOPRENO.join(", ")}`);
+  return regla;
+}
+function reglaDrafting(valor) {
+  const regla = valor || "por confirmar";
+  if (!REGLAS_DRAFTING.includes(regla)) throw new ErrorLogica("DATOS_INVALIDOS", `El drafting debe ser uno de: ${REGLAS_DRAFTING.join(", ")}`);
   return regla;
 }
 function fechaValida(fecha) {
@@ -91,7 +100,7 @@ export function crearServicioConvocatorias({ repos, usuarios, dominio, log = { i
 
   return {
     // Crea una carrera futura (solo administradores).
-    async crear(solicitanteId, { nombre, deporte, fecha, lugar, neopreno } = {}) {
+    async crear(solicitanteId, { nombre, deporte, fecha, lugar, neopreno, drafting, cross } = {}) {
       await usuarios.exigirAdministrador(solicitanteId);
       if (!DEPORTES.includes(deporte)) throw new ErrorLogica("DATOS_INVALIDOS", `El deporte debe ser uno de: ${DEPORTES.join(", ")}`);
       const c = {
@@ -101,6 +110,8 @@ export function crearServicioConvocatorias({ repos, usuarios, dominio, log = { i
         fecha: fechaValida(fecha),
         lugar: texto(lugar ?? "", "El lugar", { max: 100 }),
         neopreno: reglaNeopreno(neopreno, deporte),
+        drafting: reglaDrafting(drafting),
+        cross: [true, "true", "on"].includes(cross), // modalidad cross: se corre con bici de montaña (MTB)
         estado: ESTADOS_CONVOCATORIA.ABIERTA,
         creadaPor: solicitanteId,
       };
