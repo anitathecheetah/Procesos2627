@@ -1,7 +1,7 @@
 # Colores de los clubes de Primera División
 
 Los 22 clubes que juegan en Primera División de la liga de triatlón (Iberdrola y Suzuki) o de duatlón en 2026 tienen un color
-(o varios) asociado: el de su maillot. Los eligió el usuario. Las clasificaciones de las divisiones salen de
+(o varios) asociado: el de su maillot. Además tiene color la Universidad de Alicante (azul oscuro), que no es de Primera. Los eligió el usuario. Las clasificaciones de las divisiones salen de
 https://live.triatlon.org/leagues (24/11/2026). La liga general (todas las competiciones) queda fuera por ahora.
 
 ## Dónde se ven

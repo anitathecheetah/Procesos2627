@@ -29,6 +29,7 @@ export const COLORES_CLUBES = Object.freeze([
   { nombre: "Tripuçol", colores: [NARANJA, NEGRO, BLANCO], descripcion: "naranja, negro y blanco" },
   { nombre: "Club Triatlón Tritones Rioja", colores: [CELESTE, BLANCO, NARANJA], descripcion: "celeste, blanco y naranja" },
   { nombre: "Triatlón Ferrol", colores: [AZUL, BLANCO], descripcion: "azul y blanco" },
+  { nombre: "Universidad de Alicante", colores: ["#1e3a8a"], descripcion: "azul oscuro" },
 ]);
 
 // Cada nombre admite variantes con que se escribe en los Excel y en el ranking de la FETRI.
