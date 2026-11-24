@@ -3,7 +3,7 @@
 ## Qué hace
 
 1. El **administrador** crea las próximas carreras (nombre, deporte, fecha y lugar) en la tarjeta **Próximas carreras**.
-2. Cada **usuario con sesión** pulsa **Me apunto** en las que va a ir (la app le pide su **nombre y sus dos apellidos**, rellenados con el de su cuenta, para poder reconocerle en la lista de la federación) (y **Ya no voy** si cambia de idea). Cualquiera ve cuántos se han apuntado; solo el administrador ve los nombres (sin email).
+2. Cada **usuario con sesión** pulsa **Me apunto** en las que va a ir (el nombre y los dos apellidos se toman de **Mi perfil**, sin pedirlos al apuntarse; si faltan, la app avisa de que hay que completarlos) (y **Ya no voy** si cambia de idea). Cualquiera ve cuántos se han apuntado; solo el administrador ve los nombres (sin email).
 3. Antes de la carrera, la federación publica la **lista de salida** oficial. El administrador la sube como Excel con **Subir lista de salida**. La carrera pasa a **cerrada** (con lista de salida), deja de admitir inscripciones y el administrador ve la **asistencia**: quién de los apuntados está en la lista, quién no y cuántos participantes no se habían apuntado.
 4. La **predicción** de esa carrera usa la lista de salida: se predice a todos los que van a competir (ver [prediccion.md](prediccion.md)).
 5. Después de la carrera se importan los resultados como siempre (ver [importacion-excel.md](importacion-excel.md)).
@@ -24,7 +24,7 @@ La coincidencia es por nombre: las palabras del nombre del usuario deben aparece
 ## Datos y privacidad
 
 - `convocatorias`: `id, nombre, deporte, fecha, lugar, estado (abierta | cerrada), creadaPor`.
-- `inscripciones`: `id, convocatoriaId, usuarioId, nombre` (único por carrera y usuario). Guarda el nombre de la cuenta, nunca el email.
+- `inscripciones`: `id, convocatoriaId, usuarioId, nombre, bici` (único por carrera y usuario). `nombre` es el del perfil (nombre + apellidos), nunca el email; `bici` es la elegida en «Preparar carrera» (`{nombre, tipo}`, opcional).
 - `salida`: `id, convocatoriaId, atletaId, clubId?, dorsal?` (único por carrera y atleta).
 - Borrar una carrera borra sus inscripciones y su lista de salida.
 
@@ -35,7 +35,8 @@ La coincidencia es por nombre: las palabras del nombre del usuario deben aparece
 | `GET /api/convocatorias` | público | Listado (abiertas por fecha próxima, luego cerradas). Con sesión añade `apuntado`; incluye `participantes` (tamaño de la lista de salida). |
 | `POST /api/convocatorias` | admin | Crea una carrera: `{ nombre, deporte, fecha (AAAA-MM-DD), lugar }`. |
 | `DELETE /api/convocatorias/:id` | admin | La borra con sus inscripciones y su lista. |
-| `PUT` / `DELETE /api/convocatorias/:id/inscripcion` | sesión | Apuntarse / desapuntarse (repetirlo no da error). Solo si está abierta. |
+| `PUT` / `DELETE /api/convocatorias/:id/inscripcion` | sesión | Apuntarse (sin cuerpo: el nombre sale del perfil, que debe tener nombre y dos apellidos) / desapuntarse (repetirlo no da error). Solo si está abierta. |
+| `PUT /api/convocatorias/:id/inscripcion/bici` | sesión | Elige la bici de la carrera: `{ bici }` con el nombre de una bici del perfil que valga para la carrera; `""` la quita. Hay que estar apuntado. |
 | `GET /api/convocatorias/:id/inscripciones` | admin | Quién se ha apuntado. |
 | `PUT /api/convocatorias/:id/salida?sexo=M\|F` | admin | Sube la lista de salida (Excel como cuerpo). Devuelve participantes, menores excluidos, filas descartadas y la asistencia. |
 | `GET /api/convocatorias/:id/salida` | público | Lista de salida: atleta, club, dorsal. |

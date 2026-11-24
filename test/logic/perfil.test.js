@@ -79,13 +79,6 @@ test("convocatorias: el administrador fija la regla del neopreno (solo triatlón
   await assert.rejects(s.crear("a", { ...base, deporte: "triatlon", neopreno: "quizá" }), codigo("DATOS_INVALIDOS"));
 });
 
-test("recomendarMaterial: con drafting solo bici de ruta; sin drafting también contrarreloj", () => {
-  const bici = (drafting) => recomendarMaterial({ deporte: "duatlon", tiempo: null, drafting }).find((a) => a.nombre.startsWith("Bici")).nombre;
-  assert.match(bici("permitido"), /de ruta \(con drafting\)/);
-  assert.match(bici("prohibido"), /contrarreloj/);
-  assert.match(bici(undefined), /por confirmar/);
-});
-
 test("convocatorias: el administrador fija el drafting", async () => {
   const r = repos();
   const s = crearServicioConvocatorias({ repos: r, usuarios: { exigirAdministrador: async () => {} }, dominio: crearServicioDominio(r) });
@@ -95,8 +88,7 @@ test("convocatorias: el administrador fija el drafting", async () => {
   await assert.rejects(s.crear("a", { ...base, drafting: "a veces" }), codigo("DATOS_INVALIDOS"));
 });
 
-test("cross: la bici recomendada es la MTB y la carrera lo guarda", async () => {
-  assert.match(recomendarMaterial({ deporte: "triatlon", tiempo: null, drafting: "permitido", cross: true }).find((a) => a.nombre.startsWith("Bici")).nombre, /MTB/);
+test("cross: la carrera lo guarda", async () => {
   const r = repos();
   const s = crearServicioConvocatorias({ repos: r, usuarios: { exigirAdministrador: async () => {} }, dominio: crearServicioDominio(r) });
   const base = { nombre: "Duatlón cross de prueba", deporte: "duatlon", fecha: "2027-06-06" };

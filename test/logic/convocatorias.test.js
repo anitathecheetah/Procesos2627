@@ -7,6 +7,7 @@ import { crearRepositorioMemoria } from "../../server/data/repositorioMemoria.js
 import { crearServicioUsuarios } from "../../server/logic/usuarios.js";
 import { crearColeccionMemoria } from "../../server/data/coleccionMemoria.js";
 import { UNICOS_DOMINIO } from "../../server/data/indicesDominio.js";
+import { crearServicioPerfil } from "../../server/logic/perfil.js";
 import { crearExcel, finalista } from "../helpers/excelSintetico.js";
 
 const codigo = (c) => (e) => e.codigo === c;
@@ -25,7 +26,20 @@ async function preparar() {
   const repos = Object.fromEntries(Object.entries(UNICOS_DOMINIO).map(([n, u]) => [n, crearColeccionMemoria({ unicos: u })]));
   const dominio = crearServicioDominio(repos);
   const salida = (nombres, { anio = 1990 } = {}) => crearExcel(nombres.map((n, i) => finalista(n, anio, "Club Uno", i + 1, i + 1, "00:50:00")));
-  return { admin, registrar, repos, salida, servicio: crearServicioConvocatorias({ repos, usuarios, dominio }) };
+  const perfil = crearServicioPerfil({ repos });
+  const real = crearServicioConvocatorias({ repos, usuarios, perfil, dominio });
+  // Para los tests: si se indica un nombre completo, antes se guarda en el perfil (de ahí lo toma la inscripción).
+  const servicio = {
+    ...real,
+    apuntarse: async (usuarioId, id, nombreCompleto) => {
+      if (nombreCompleto) {
+        const [nombre, ...apellidos] = nombreCompleto.split(" ");
+        await perfil.guardar(usuarioId, { nombre, apellidos: apellidos.join(" ") });
+      }
+      return real.apuntarse(usuarioId, id);
+    },
+  };
+  return { admin, registrar, repos, salida, perfil, servicio };
 }
 
 test("el administrador crea una carrera y aparece en el listado abierta y sin apuntados", async () => {
@@ -179,4 +193,40 @@ test("apuntarse exige nombre y dos apellidos y permite corregirlo sin duplicar",
   await servicio.apuntarse(eva, c.id, "Eva  Gil   Pérez");
   await servicio.apuntarse(eva, c.id, "Eva María Gil Pérez");
   assert.deepEqual((await servicio.apuntados(admin, c.id)).map((a) => a.nombre), ["Eva María Gil Pérez"]);
+});
+
+test("apuntarse toma el nombre del perfil: sin nombre y dos apellidos completos no se apunta", async () => {
+  const { admin, registrar, perfil, servicio } = await preparar();
+  const c = await servicio.crear(admin, DATOS);
+  const eva = await registrar("Eva", "eva@correo.es");
+  await assert.rejects(servicio.apuntarse(eva, c.id), (e) => e.codigo === "DATOS_INVALIDOS" && /Mi perfil/.test(e.message)); // perfil vacío
+  await perfil.guardar(eva, { nombre: "Eva", apellidos: "Gil" }); // falta un apellido
+  await assert.rejects(servicio.apuntarse(eva, c.id), codigo("DATOS_INVALIDOS"));
+  await perfil.guardar(eva, { nombre: "Eva", apellidos: "  Gil   Pérez " });
+  await servicio.apuntarse(eva, c.id);
+  assert.deepEqual(await servicio.apuntados(admin, c.id), [{ usuarioId: eva, nombre: "Eva Gil Pérez" }]);
+  await perfil.guardar(eva, { nombre: "Eva María", apellidos: "Gil Pérez" }); // cambia el perfil → se actualiza al repetir
+  await servicio.apuntarse(eva, c.id);
+  assert.deepEqual((await servicio.apuntados(admin, c.id)).map((a) => a.nombre), ["Eva María Gil Pérez"]);
+});
+
+test("elegirBici: solo apuntado, solo bicis del perfil y solo las que valen para la carrera", async () => {
+  const { admin, registrar, perfil, servicio } = await preparar();
+  const eva = await registrar("Eva", "eva@correo.es");
+  await perfil.guardar(eva, { nombre: "Eva", apellidos: "Gil Pérez", bicis: [{ nombre: "Ruta", tipo: "ruta" }, { nombre: "CRI", tipo: "contrarreloj" }, { nombre: "Monte", tipo: "mtb" }] });
+  const conDrafting = await servicio.crear(admin, { ...DATOS, drafting: "permitido" });
+  const sinDrafting = await servicio.crear(admin, { ...DATOS, nombre: "Sin drafting", drafting: "prohibido" });
+  const cross = await servicio.crear(admin, { ...DATOS, nombre: "Cross", cross: "on" });
+  await assert.rejects(servicio.elegirBici(eva, conDrafting.id, "Ruta"), codigo("DATOS_INVALIDOS")); // no está apuntado
+  await assert.rejects(servicio.elegirBici(undefined, conDrafting.id, "Ruta"), codigo("NO_AUTENTICADO"));
+  for (const c of [conDrafting, sinDrafting, cross]) await servicio.apuntarse(eva, c.id);
+  assert.deepEqual(await servicio.elegirBici(eva, conDrafting.id, "Ruta"), { nombre: "Ruta", tipo: "ruta" });
+  await assert.rejects(servicio.elegirBici(eva, conDrafting.id, "CRI"), /drafting/); // con drafting no vale la de contrarreloj
+  await assert.rejects(servicio.elegirBici(eva, conDrafting.id, "Monte"), /cross/); // MTB solo en cross
+  await assert.rejects(servicio.elegirBici(eva, conDrafting.id, "Otra"), /perfil/);
+  assert.equal((await servicio.elegirBici(eva, sinDrafting.id, "CRI")).tipo, "contrarreloj");
+  assert.equal((await servicio.elegirBici(eva, cross.id, "Monte")).tipo, "mtb");
+  await assert.rejects(servicio.elegirBici(eva, cross.id, "Ruta"), /montaña/);
+  assert.equal(await servicio.elegirBici(eva, conDrafting.id, ""), null); // quitar la elección
+  await assert.rejects(servicio.elegirBici(eva, "no-existe", "Ruta"), codigo("NO_ENCONTRADO"));
 });

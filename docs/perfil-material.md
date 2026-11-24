@@ -26,14 +26,17 @@ por confirmar → mirar el reglamento.
 
 ## Drafting y tipo de bici
 Con drafting solo se permite la bici de ruta; la de contrarreloj solo vale en pruebas sin drafting. El administrador indica
-`permitido`, `prohibido` o `por confirmar` (por defecto) al crear la carrera, y «Preparar carrera» lo muestra y recomienda la bici.
+`permitido`, `prohibido` o `por confirmar` (por defecto) al crear la carrera, y «Preparar carrera» lo muestra.
 
 Las pruebas **cross** (triatlón, duatlón o aquatlón cross) se corren con **MTB**; en el resto no se admite MTB. El administrador
-marca «Cross» al crear la carrera y «Preparar carrera» recomienda la MTB (el drafting entonces no influye en la bici).
+marca «Cross» al crear la carrera (el drafting entonces no influye en la bici).
+
+### Elegir la bici en «Preparar carrera»
+Ya no hay una recomendación genérica de bici: quien está apuntado elige en «Mi bici para esta carrera» una de las bicis de su perfil. Las que no valen (MTB fuera de cross, contrarreloj con drafting, o ruta/contrarreloj en cross) salen deshabilitadas con el motivo; con drafting «por confirmar» la contrarreloj vale con un aviso. La elección se guarda en la inscripción.
 
 Nota: en las bases reguladoras de 2026 de la FETRI el drafting depende de la **categoría** dentro de una misma prueba
 (élite, sub-23, juvenil, júnior y grupos de edad sprint con drafting; grupos de edad estándar sin drafting; contrarreloj por
 equipos sin drafting). El ajuste por carrera es una simplificación.
 
 ## Más adelante
-Elegir el material usado en cada carrera al apuntarse (fase 2).
+Elegir también el resto del material (zapatillas, neopreno) por carrera (fase 2).
