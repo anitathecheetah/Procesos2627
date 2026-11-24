@@ -18,7 +18,59 @@ export function crearServicioDirectores({ repos, usuarios, dominio, catalogo = c
   const vigente = async (usuarioId) =>
     (await repos.solicitudesClub.listar({ usuarioId })).find((s) => s.estado !== ESTADOS_SOLICITUD.RECHAZADA) ?? null;
 
+  // Nombre oficial del club (el de la app o el del catálogo de la FETRI) si el texto coincide con alguno; si no, null.
+  const nombreOficial = async (nombre) => {
+    if (typeof nombre !== "string" || !nombre.trim()) return null;
+    const clave = claveClub(nombre);
+    const existente = await repos.clubes.buscarUno({ clave });
+    return existente?.nombre ?? catalogo.find((c) => c.clave === clave)?.nombre ?? null;
+  };
+
   return {
+    nombreOficial,
+
+    // Solo administrador: clubes escritos a mano en los perfiles que no son ninguno conocido (con cuántos perfiles).
+    // No se muestra de quién es cada uno: el perfil es privado.
+    async clubesPropuestos(adminId) {
+      await usuarios.exigirAdministrador(adminId);
+      const grupos = new Map();
+      for (const p of await repos.perfiles.listar()) {
+        if (!p.club?.trim() || (await nombreOficial(p.club))) continue;
+        const clave = claveClub(p.club);
+        const g = grupos.get(clave) ?? { nombre: p.club, usuarios: 0 };
+        g.usuarios += 1;
+        grupos.set(clave, g);
+      }
+      return [...grupos.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    },
+
+    // Solo administrador: valida un club propuesto. Con `clubId` lo une a uno de la lista (existente o del catálogo),
+    // con `nombreClub` lo crea con ese nombre (corregido), con `descartar` borra el club de esos perfiles, y sin nada
+    // lo da por bueno tal y como está escrito. Actualiza todos los perfiles que lo escribieron.
+    async resolverClubPropuesto(adminId, { nombre, clubId, nombreClub, descartar } = {}) {
+      await usuarios.exigirAdministrador(adminId);
+      const clave = claveClub(nombre);
+      const perfiles = (await repos.perfiles.listar()).filter((p) => p.club?.trim() && claveClub(p.club) === clave);
+      if (!perfiles.length) throw new ErrorLogica("NO_ENCONTRADO", "Ningún perfil tiene ese club");
+      let final = "";
+      if (descartar !== true) {
+        if (clubId?.startsWith(PREFIJO_CATALOGO)) {
+          const delCatalogo = catalogo.find((c) => c.id === clubId);
+          if (!delCatalogo) throw new ErrorLogica("NO_ENCONTRADO", "El club no existe");
+          final = (await dominio.obtenerOCrearClub(delCatalogo.nombre)).nombre;
+        } else if (clubId) {
+          const club = await repos.clubes.buscarPorId(clubId);
+          if (!club) throw new ErrorLogica("NO_ENCONTRADO", "El club no existe");
+          final = club.nombre;
+        } else {
+          final = (await dominio.obtenerOCrearClub(nombreValido(nombreClub ?? perfiles[0].club))).nombre;
+        }
+      }
+      for (const p of perfiles) await repos.perfiles.actualizar({ ...p, club: final });
+      log.info("Club propuesto resuelto", { perfiles: perfiles.length });
+      return { club: final, perfiles: perfiles.length };
+    },
+
     // Lista de clubes para elegir: los que ya existen en la app y los del catálogo de la FETRI que aún no están
     // (con id «fetri:…»), por orden alfabético. Un club del catálogo ya existente sale una sola vez.
     async clubes() {

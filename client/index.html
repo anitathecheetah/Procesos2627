@@ -41,6 +41,11 @@
       <h2>Solicitudes de director de club</h2>
       <div id="solicitudes-club"></div>
     </section>
+    <section id="zona-clubes-propuestos" class="tarjeta" hidden>
+      <h2>Clubes propuestos en los perfiles</h2>
+      <p class="suave">Clubes que los usuarios han escrito a mano porque no estaban en la lista. Valídalos, únelos a uno existente o descártalos.</p>
+      <div id="clubes-propuestos"></div>
+    </section>
     </div>
 
     <div class="panel" data-seccion="proximas" hidden>
@@ -209,7 +214,10 @@
           <legend>Datos personales</legend>
         <label>Nombre <input name="nombre" maxlength="60" autocomplete="given-name"></label>
         <label>Apellidos <input name="apellidos" maxlength="80" autocomplete="family-name"></label>
-        <label>Club <input name="club" maxlength="80" placeholder="Triatlón Albacete"></label>
+        <label>Club <input name="club" maxlength="80" list="lista-clubes" autocomplete="off" placeholder="Escribe para buscar tu club"></label>
+        <datalist id="lista-clubes"></datalist>
+        <p id="estado-club" class="suave"></p>
+        <p class="suave pequeno">Busca tu club en la lista; si no aparece, escríbelo y el administrador lo validará.</p>
         <label>Fecha de nacimiento <input name="fechaNacimiento" type="date"></label> <span id="edad-perfil" class="suave"></span>
         <label>Altura (cm) <input name="alturaCm" type="number" min="100" max="230" step="0.1"></label>
         <label>Peso (kg) <input name="pesoKg" type="number" min="30" max="250" step="0.1"></label>
