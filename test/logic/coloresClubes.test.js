@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { COLORES_CLUBES, coloresDeClub, conColores } from "../../server/logic/coloresClubes.js";
 
-test("los 22 clubes de Primera tienen colores CSS válidos y nombres distintos", () => {
-  assert.equal(COLORES_CLUBES.length, 22);
-  assert.equal(new Set(COLORES_CLUBES.map((c) => c.nombre)).size, 22);
+test("los 23 clubes con color tienen colores CSS válidos y nombres distintos", () => {
+  assert.equal(COLORES_CLUBES.map((c) => c.nombre).length, 23);
+  assert.equal(new Set(COLORES_CLUBES.map((c) => c.nombre)).size, 23);
   for (const c of COLORES_CLUBES) {
     assert.ok(c.colores.length >= 1 && c.colores.every((h) => /^#[0-9a-f]{6}$/i.test(h)), c.nombre);
     assert.ok(c.descripcion, c.nombre);
@@ -32,4 +32,8 @@ test("conColores amplía un club solo si tiene color", () => {
   assert.deepEqual(conColores({ id: "1", nombre: "Cidade de Lugo Fluvial" }), { id: "1", nombre: "Cidade de Lugo Fluvial", colores: ["#d9138a"], descripcionColor: "fucsia" });
   assert.deepEqual(conColores({ id: "2", nombre: "Otro" }), { id: "2", nombre: "Otro" });
   assert.equal(conColores(null), null);
+});
+
+test("Universidad de Alicante: azul oscuro", () => {
+  assert.equal(coloresDeClub("UNIVERSIDAD DE ALICANTE").descripcion, "azul oscuro");
 });
