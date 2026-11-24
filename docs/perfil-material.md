@@ -31,5 +31,9 @@ Con drafting solo se permite la bici de ruta; la de contrarreloj solo vale en pr
 Las pruebas **cross** (triatlón, duatlón o aquatlón cross) se corren con **MTB**; en el resto no se admite MTB. El administrador
 marca «Cross» al crear la carrera y «Preparar carrera» recomienda la MTB (el drafting entonces no influye en la bici).
 
+Nota: en las bases reguladoras de 2026 de la FETRI el drafting depende de la **categoría** dentro de una misma prueba
+(élite, sub-23, juvenil, júnior y grupos de edad sprint con drafting; grupos de edad estándar sin drafting; contrarreloj por
+equipos sin drafting). El ajuste por carrera es una simplificación.
+
 ## Más adelante
 Elegir el material usado en cada carrera al apuntarse (fase 2).

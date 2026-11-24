@@ -64,7 +64,7 @@ export async function cargarDirectores(usuario) {
   try {
     const [clubes, solicitud] = await Promise.all([clubesParaElegir(), miSolicitudDirector()]);
     selector.replaceChildren(
-      ...clubes.map((c) => el("option", c.nombre, { value: c.id })),
+      ...clubes.map((c) => el("option", c.comunidad ? `${c.nombre} (${c.comunidad})` : c.nombre, { value: c.id })),
       el("option", "Mi club no está en la lista", { value: OTRO_CLUB }),
     );
     actualizarNombre();
