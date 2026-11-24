@@ -4,6 +4,8 @@
 import { randomUUID } from "node:crypto";
 import { ErrorLogica } from "./errores.js";
 import { DEPORTES } from "./catalogos.js";
+import { claveClub } from "./normalizacion.js";
+import { PREFIJO_CATALOGO, cargarCatalogoClubes } from "./catalogoClubes.js";
 
 export const ESTADOS_SOLICITUD = Object.freeze({ PENDIENTE: "pendiente", APROBADA: "aprobada", RECHAZADA: "rechazada" });
 const nombreValido = (n) => {
@@ -12,14 +14,19 @@ const nombreValido = (n) => {
   return t;
 };
 
-export function crearServicioDirectores({ repos, usuarios, dominio, log = { info() {} } }) {
+export function crearServicioDirectores({ repos, usuarios, dominio, catalogo = cargarCatalogoClubes(), log = { info() {} } }) {
   const vigente = async (usuarioId) =>
     (await repos.solicitudesClub.listar({ usuarioId })).find((s) => s.estado !== ESTADOS_SOLICITUD.RECHAZADA) ?? null;
 
   return {
-    // Lista de clubes para elegir (los que ya existen), por orden alfabético.
+    // Lista de clubes para elegir: los que ya existen en la app y los del catálogo de la FETRI que aún no están
+    // (con id «fetri:…»), por orden alfabético. Un club del catálogo ya existente sale una sola vez.
     async clubes() {
-      return (await repos.clubes.listar()).map(({ id, nombre }) => ({ id, nombre })).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+      const existentes = await repos.clubes.listar();
+      const claves = new Set(existentes.map((c) => claveClub(c.nombre)));
+      const nuevos = catalogo.filter((c) => !claves.has(c.clave));
+      return [...existentes.map(({ id, nombre }) => ({ id, nombre })), ...nuevos.map(({ id, nombre, comunidad }) => ({ id, nombre, ...(comunidad ? { comunidad } : {}) }))]
+        .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
     },
 
     // Pide ser director: o bien `clubId` (de la lista) o bien `nombreClub` (si no aparece). Una a la vez por persona.
@@ -28,13 +35,19 @@ export function crearServicioDirectores({ repos, usuarios, dominio, log = { info
       if ((clubId ? 1 : 0) + (nombreClub ? 1 : 0) !== 1) throw new ErrorLogica("DATOS_INVALIDOS", "Elige un club de la lista o escribe el nombre del tuyo");
       if (await vigente(usuarioId)) throw new ErrorLogica("DATOS_INVALIDOS", "Ya tienes una solicitud de director pendiente o aprobada");
       let club = null;
-      if (clubId) {
+      let delCatalogo = null;
+      if (clubId?.startsWith(PREFIJO_CATALOGO)) {
+        delCatalogo = catalogo.find((c) => c.id === clubId);
+        if (!delCatalogo) throw new ErrorLogica("NO_ENCONTRADO", "El club no existe");
+        club = (await repos.clubes.listar()).find((c) => claveClub(c.nombre) === delCatalogo.clave) ?? null; // ya creado por una importación
+      } else if (clubId) {
         club = await repos.clubes.buscarPorId(clubId);
         if (!club) throw new ErrorLogica("NO_ENCONTRADO", "El club no existe");
       }
+      // Un club del catálogo no es «nuevo»: es oficial, se crea al aprobar si aún no existe en la app.
       const solicitud = {
         id: randomUUID(), usuarioId, estado: ESTADOS_SOLICITUD.PENDIENTE, creada: new Date().toISOString(),
-        clubId: club?.id ?? null, nombreClub: club ? club.nombre : nombreValido(nombreClub), clubNuevo: !club,
+        clubId: club?.id ?? null, nombreClub: club?.nombre ?? delCatalogo?.nombre ?? nombreValido(nombreClub), clubNuevo: !club && !delCatalogo,
       };
       await repos.solicitudesClub.crear(solicitud);
       log.info("Solicitud de director", { id: solicitud.id });

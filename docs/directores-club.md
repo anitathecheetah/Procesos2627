@@ -22,8 +22,17 @@ Solo datos públicos de los resultados: **nunca** el perfil privado (peso, altur
 - `GET /api/directores/panel` (solo director aprobado)
 - Colección `solicitudesClub`. Un club con una solicitud no se borra al eliminar sus pruebas.
 
+## Catálogo de clubes de la FETRI
+`server/data/clubes-fetri-2026.txt` contiene los 658 clubes distintos del Ranking Nacional de Clubes 2026
+(https://live.triatlon.org/Rankings/RkClub, copiado el 24/11/2026), con su comunidad autónoma cuando la web la indica
+(unos 240 no la traen). La lista de la solicitud mezcla los clubes que ya existen en la app con los del catálogo que aún no
+existen (id `fetri:…`). Al aprobar una solicitud de un club del catálogo, el club se crea si no existe. Un club del catálogo
+no cuenta como «club nuevo» y se identifica por su nombre normalizado, igual que en la importación.
+Limitación: si el Excel de resultados escribe el club de otra forma (p. ej. «TRIATLON ALBACETE RES» y «CLUB TRIATLÓN ALBACETE
+RES»), son clubes distintos para la app; el administrador puede unirlos al aprobar (`clubId`).
+
 ## Más adelante
-Cargar como catálogo la lista oficial de clubes de la FETRI.
+Unir clubes desde la pantalla de administración y actualizar el catálogo cada temporada.
 
 ## Dónde está en la web
 La sección del menú «Mi perfil» (antes «Cuenta») reúne tres tarjetas: **Mi cuenta** (sesión, contraseña, eliminar cuenta),

@@ -27,7 +27,10 @@ test("flujo completo: lista de clubes, solicitud, aprobación del admin y panel"
   try {
     const ana = await entrar("ana@correo.es");
     const adm = await entrar("admin@correo.es");
-    assert.deepEqual(await (await json("GET", "/api/clubes", null, ana)).json(), [{ id: "c1", nombre: "Triatlón Albacete" }]);
+    const clubes = await (await json("GET", "/api/clubes", null, ana)).json();
+    assert.ok(clubes.length > 600); // existentes + catálogo FETRI
+    assert.equal(clubes.filter((c) => c.id === "c1").length, 1);
+    assert.ok(clubes.some((c) => c.id.startsWith("fetri:") && c.comunidad));
     assert.equal(await (await json("GET", "/api/directores/solicitudes/yo", null, ana)).json(), null);
     assert.equal((await json("GET", "/api/directores/panel", null, ana)).status, 403);
     const creada = await json("POST", "/api/directores/solicitudes", { clubId: "c1" }, ana);

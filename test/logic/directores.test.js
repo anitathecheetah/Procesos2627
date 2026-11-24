@@ -26,7 +26,7 @@ async function preparar() {
   const dominio = crearServicioDominio(repos);
   const albacete = await dominio.obtenerOCrearClub("Triatlón Albacete");
   const otro = await dominio.obtenerOCrearClub("Otro Club");
-  return { admin, ana, luis, repos, dominio, albacete, otro, servicio: crearServicioDirectores({ repos, usuarios, dominio }) };
+  return { admin, ana, luis, repos, dominio, albacete, otro, servicio: crearServicioDirectores({ repos, usuarios, dominio, catalogo: [] }) };
 }
 
 test("lista de clubes por orden alfabético", async () => {
@@ -105,4 +105,35 @@ test("ERROR: validaciones y permisos", async () => {
   await servicio.resolver(admin, s.id, { aprobar: true });
   await assert.rejects(servicio.resolver(admin, s.id, { aprobar: false }), codigo("DATOS_INVALIDOS")); // ya resuelta
   await assert.rejects(servicio.panel(luis), codigo("PROHIBIDO")); // otra persona no ve el panel
+});
+
+test("catálogo FETRI: sale en la lista, se solicita y al aprobar se crea el club (una sola vez)", async () => {
+  const { repos, dominio, admin, ana, luis, albacete, otro } = await preparar();
+  const catalogo = [
+    { id: "fetri:TRIATLON ALBACETE", clave: "TRIATLON ALBACETE", nombre: "Triatlón Albacete", comunidad: "Castilla-La Mancha" },
+    { id: "fetri:CLUB OFICIAL", clave: "CLUB OFICIAL", nombre: "CLUB OFICIAL", comunidad: "Galicia" },
+  ];
+  const servicio = crearServicioDirectores({ repos, usuarios: { exigirAdministrador: async () => {}, datosPublicos: async () => null }, dominio, catalogo });
+  const lista = await servicio.clubes();
+  assert.equal(lista.filter((c) => c.nombre.toLowerCase().includes("albacete")).length, 1); // el existente tapa al del catálogo
+  const oficial = lista.find((c) => c.nombre === "CLUB OFICIAL");
+  assert.equal(oficial.comunidad, "Galicia");
+  const s = await servicio.solicitar(ana, { clubId: oficial.id });
+  assert.equal(s.clubNuevo, false);
+  const antes = (await repos.clubes.listar()).length;
+  await servicio.resolver(admin, s.id, { aprobar: true });
+  assert.equal((await repos.clubes.listar()).length, antes + 1);
+  assert.equal((await servicio.panel(ana)).club.nombre, "CLUB OFICIAL");
+  const s2 = await servicio.solicitar(luis, { clubId: "fetri:CLUB OFICIAL" }); // mismo club: se reutiliza
+  assert.equal(s2.clubId, (await servicio.panel(ana)).club.id);
+  await assert.rejects(servicio.solicitar(admin, { clubId: "fetri:NO EXISTE" }), codigo("NO_ENCONTRADO"));
+  void albacete; void otro;
+});
+
+test("el catálogo real de la FETRI se carga completo y sin duplicados", async () => {
+  const { cargarCatalogoClubes } = await import("../../server/logic/catalogoClubes.js");
+  const c = cargarCatalogoClubes();
+  assert.ok(c.length >= 640 && c.length <= 660, `clubes: ${c.length}`);
+  assert.equal(new Set(c.map((x) => x.clave)).size, c.length);
+  assert.ok(c.some((x) => x.nombre === "CLUB TRIATLÓN ALBACETE RES" && x.comunidad === "Castilla-La Mancha"));
 });
