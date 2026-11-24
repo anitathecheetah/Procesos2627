@@ -40,3 +40,11 @@ equipos sin drafting). El ajuste por carrera es una simplificación.
 
 ## Más adelante
 Elegir también el resto del material (zapatillas, neopreno) por carrera (fase 2).
+
+## Club del perfil
+El campo **Club** es un buscador: al escribir se sugieren los clubes ya subidos (los de la app y los del catálogo de la FETRI). Si el
+texto coincide con uno (sin importar mayúsculas ni tildes) se guarda con su nombre oficial. Si no aparece, se puede escribir libremente:
+el perfil muestra «Club pendiente de validar por el administrador» y el club aparece en la tarjeta **Clubes propuestos en los perfiles**
+de administración (solo el nombre y en cuántos perfiles está, nunca de quién). El administrador puede **validarlo** (tal cual o con el
+nombre corregido, creando el club), **unirlo** a un club de la lista o **descartarlo** (se vacía el club de esos perfiles).
+API (admin): `GET /api/clubes/propuestos` y `PUT /api/clubes/propuestos` con `{ nombre, clubId? | nombreClub? | descartar? }`.

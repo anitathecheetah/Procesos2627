@@ -39,4 +39,6 @@ export function formularioDesdePerfil(p) {
   return f;
 }
 
+export const textoEstadoClub = (p) => (p?.clubPendiente ? "Club pendiente de validar por el administrador." : "");
+
 export const textoEdad = (edad) => (edad == null ? "" : `${edad} años`);

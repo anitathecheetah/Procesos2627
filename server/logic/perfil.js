@@ -47,14 +47,20 @@ export function edadEn(fechaNacimiento, hoy = hoyEnEspana()) {
   return ha - a - (hm < m || (hm === m && hd < d) ? 1 : 0);
 }
 
-export function crearServicioPerfil({ repos, hoy = hoyEnEspana }) {
-  const conEdad = (p) => ({ ...p, edad: edadEn(p.fechaNacimiento, hoy()) });
+// `clubConocido(nombre)` devuelve el nombre oficial del club si existe en la app o en el catálogo, o null. Sin él no se valida.
+export function crearServicioPerfil({ repos, hoy = hoyEnEspana, clubConocido = null }) {
+  const conEdad = async (p) => ({
+    ...p,
+    edad: edadEn(p.fechaNacimiento, hoy()),
+    // Club escrito a mano que el administrador aún no ha validado.
+    clubPendiente: Boolean(clubConocido && p.club && !(await clubConocido(p.club))),
+  });
   return {
     // Perfil propio (con valores por defecto si aún no ha guardado nada).
     async obtener(usuarioId) {
       const guardado = await repos.perfiles.buscarPorId(usuarioId);
       const { id: _i, usuarioId: _u, ...datos } = guardado ?? {};
-      return conEdad({ ...structuredClone(PERFIL_VACIO), ...datos });
+      return await conEdad({ ...structuredClone(PERFIL_VACIO), ...datos });
     },
 
     // Borra el perfil (al eliminar la cuenta no deben quedar datos personales).
@@ -76,10 +82,11 @@ export function crearServicioPerfil({ repos, hoy = hoyEnEspana }) {
         .map((b) => ({ nombre: texto(b?.nombre, "El nombre de la bici", 60), tipo: b?.tipo ?? "ruta" }))
         .filter((b) => b.nombre);
       if (bicis.some((b) => !TIPOS_BICI.includes(b.tipo))) throw new ErrorLogica("DATOS_INVALIDOS", `El tipo de bici debe ser uno de: ${TIPOS_BICI.join(", ")}`);
+      const club = texto(datos.club, "El club", 80);
       const perfil = {
         nombre: texto(datos.nombre, "El nombre", 60),
         apellidos: texto(datos.apellidos, "Los apellidos", 80),
-        club: texto(datos.club, "El club", 80),
+        club: (clubConocido && (await clubConocido(club))) || club, // si es uno conocido se guarda con su nombre oficial
         fechaNacimiento: fecha(datos.fechaNacimiento, hoy()),
         alturaCm: numero(datos.alturaCm, "La altura (cm)", { min: 100, max: 230 }),
         pesoKg: numero(datos.pesoKg, "El peso (kg)", { min: 30, max: 250 }),
@@ -98,7 +105,7 @@ export function crearServicioPerfil({ repos, hoy = hoyEnEspana }) {
       const entidad = { id: usuarioId, usuarioId, ...perfil };
       if (existente) await repos.perfiles.actualizar(entidad);
       else await repos.perfiles.crear(entidad);
-      return conEdad(perfil);
+      return await conEdad(perfil);
     },
   };
 }
