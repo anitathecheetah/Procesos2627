@@ -4,6 +4,7 @@ import { mostrarMensaje } from "./ui.js";
 import { el } from "./dom.js";
 import { pintarPanelClub } from "./vistaPanelClub.js";
 import { filtrarClubes, textoClubResumen } from "./filtroClubes.js";
+import { crearAbridorClub } from "./abrirClub.js";
 
 const zona = document.getElementById("panel-clubes-admin");
 const buscador = document.getElementById("buscar-club-admin");
@@ -11,10 +12,15 @@ const lista = document.getElementById("lista-clubes-admin");
 const detalle = document.getElementById("detalle-club-admin");
 let clubes = [];
 
-async function abrir(club) {
-  try { pintarPanelClub(detalle, await panelClubAdmin(club.id)); }
-  catch (error) { mostrarMensaje(error.message || "No se pudo cargar el club.", false, zona); }
-}
+// Si falla la carga de un club, el detalle anterior se sustituye por un aviso que dice cuál falló.
+const abrir = crearAbridorClub({
+  cargar: panelClubAdmin,
+  pintar: (datos) => pintarPanelClub(detalle, datos),
+  alFallar: (error, club) => {
+    detalle.replaceChildren(el("p", `No se pudo cargar el club «${club.nombre}».`, { className: "vacio" }));
+    mostrarMensaje(error.message || "No se pudo cargar el club.", false, zona);
+  },
+});
 
 function pintarLista() {
   const visibles = filtrarClubes(clubes, buscador.value);
@@ -31,7 +37,7 @@ function pintarLista() {
 buscador.addEventListener("input", pintarLista);
 
 export async function cargarPestanaClubes(usuario) {
-  if (usuario?.rol !== "admin") { clubes = []; detalle.replaceChildren(); return; }
+  if (usuario?.rol !== "admin") { abrir.descartarPendientes(); clubes = []; buscador.value = ""; lista.replaceChildren(); detalle.replaceChildren(); return; }
   try {
     clubes = await resumenClubes();
     pintarLista();
