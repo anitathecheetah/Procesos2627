@@ -146,3 +146,8 @@ button.peligro { background: transparent; color: var(--error); border: 1px solid
 
 /* Punto de color del maillot de un club de Primera División */
 .punto-club { display: inline-block; width: .9em; height: .9em; margin-right: .45em; border-radius: 50%; border: 1px solid var(--borde); vertical-align: -.1em; }
+
+.lista-clubes { list-style: none; padding: 0; margin: .5rem 0; max-height: 14rem; overflow-y: auto; border: 1px solid var(--borde, #ddd); border-radius: 6px; }
+.lista-clubes li + li { border-top: 1px solid var(--borde, #ddd); }
+.club-lista { display: block; width: 100%; text-align: left; background: none; border: 0; padding: .45rem .7rem; cursor: pointer; font: inherit; color: inherit; }
+.club-lista:hover, .club-lista:focus-visible { background: rgba(0, 0, 0, .06); }

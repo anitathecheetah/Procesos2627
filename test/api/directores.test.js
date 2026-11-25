@@ -82,3 +82,18 @@ test("club del perfil: se reconoce el oficial, el escrito a mano queda pendiente
     assert.equal((await json("PUT", "/api/clubes/propuestos", { nombre: "No existe" }, adm)).status, 404);
   } finally { cerrar(); }
 });
+
+test("pestaña Clubes: el admin ve el resumen y el panel de cualquier club; los demás no", async () => {
+  const { json, entrar, cerrar } = await arrancar();
+  try {
+    const ana = await entrar("ana@correo.es");
+    const adm = await entrar("admin@correo.es");
+    assert.equal((await json("GET", "/api/clubes/resumen", null, ana)).status, 403);
+    assert.equal((await json("GET", "/api/clubes/c1/panel", null, ana)).status, 403);
+    assert.equal((await json("GET", "/api/clubes/c1/panel")).status, 401);
+    assert.deepEqual(await (await json("GET", "/api/clubes/resumen", null, adm)).json(), [{ id: "c1", nombre: "Triatlón Albacete", atletas: 0 }]);
+    const panel = await (await json("GET", "/api/clubes/c1/panel", null, adm)).json();
+    assert.deepEqual([panel.club.nombre, panel.vacio], ["Triatlón Albacete", true]);
+    assert.equal((await json("GET", "/api/clubes/no-existe/panel", null, adm)).status, 404);
+  } finally { cerrar(); }
+});

@@ -8,6 +8,7 @@ import "./resultados.js";
 import "./prediccion.js";
 import { cargarPerfil } from "./perfil.js";
 import { cargarDirectores } from "./directores.js";
+import { cargarPestanaClubes } from "./pestanaClubes.js";
 import { cargarClubesPropuestos } from "./clubesPropuestos.js";
 import { mostrarBotonRecalcular } from "./ranking.js";
 import { alCambiarSesion } from "./convocatorias.js";
@@ -37,6 +38,7 @@ async function mostrarSesionCompleta(usuario) {
   await alCambiarSesion(usuario);
   await cargarPerfil(usuario);
   await cargarDirectores(usuario);
+  await cargarPestanaClubes(usuario);
   await cargarClubesPropuestos(usuario);
   if (usuario?.rol === "admin") await cargarAdministracion();
   else mostrarAdministracion(null);
